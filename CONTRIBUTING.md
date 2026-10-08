@@ -67,6 +67,10 @@ dotnet test GoGoGadgetHardwareMonitor.Tests\GoGoGadgetHardwareMonitor.Tests.cspr
 ```
 
 The owner-drawn gadget painting itself isn't realistically unit-testable.
+On Linux, `scripts/check.sh` builds both app targets (cross-targeting
+Windows) and runs the tests, one line per stage, then stops the compiler
+server so it doesn't stay in memory (`KEEP_BUILD_SERVER=1` keeps it).
+
 For a look at it without clicking through the app, use screenshot mode:
 
 ```bash
@@ -75,7 +79,7 @@ scripts/shots.sh mini         # just one
 ```
 
 It sends the working tree to a Windows machine (`WIN_HOST` in `.env`, ssh
-with key auth, .NET 10 SDK installed), builds it, runs each scenario from
+with key auth, .NET 10 SDK installed), builds it, runs all scenarios side by side, each from
 fresh settings with `--screenshot`, and brings the PNGs back to
 `output/shots/` plus a `contact-sheet.png` overview. A scenario is just a
 set of settings keys (`scripts/shot-scenarios.json`), so a new look to check
