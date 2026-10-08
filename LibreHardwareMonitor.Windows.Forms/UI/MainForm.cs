@@ -578,12 +578,14 @@ public sealed partial class MainForm : Form
 
         // Fork addition: the onboarding guide for the gadget's
         // fork-specific features - see StartupGuideDialog. Skipped when
-        // starting minimized to the tray (minTrayMenuItem.Checked): a
+        // starting minimized to the tray (Start Minimized AND Minimize To
+        // Tray both on; Minimize To Tray alone is on by default, so it
+        // must not suppress the guide by itself): a
         // modal dialog would force the app into the foreground right
         // after the user asked for a quiet, tray-only start, which
         // defeats the point. Reachable any time afterward from
         // Help -> Startup Guide regardless of this setting.
-        if (!minTrayMenuItem.Checked && _settings.GetValue("mainForm.showStartupGuide", true))
+        if (!(startMinMenuItem.Checked && minTrayMenuItem.Checked) && _settings.GetValue("mainForm.showStartupGuide", true))
         {
             bool showOnStartup = StartupGuideDialog.Show(true);
             _settings.SetValue("mainForm.showStartupGuide", showOnStartup);
