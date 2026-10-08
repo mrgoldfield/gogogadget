@@ -15,7 +15,7 @@ namespace LibreHardwareMonitor.Windows.Forms;
 public static class Program
 {
     [STAThread]
-    public static void Main()
+    public static void Main(string[] args)
     {
         // Registered first, before anything else can throw.
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
@@ -26,6 +26,7 @@ public static class Program
 
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);
+        SelfGrab.Init(args); // GoGoGadget: screenshot mode (Utilities/SelfGrab.cs); after the WinForms defaults, it creates a Timer
         using (MainForm form = new MainForm())
         {
             form.FormClosed += delegate

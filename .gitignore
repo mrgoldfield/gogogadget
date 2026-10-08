@@ -14,3 +14,7 @@ CLAUDE.md
 PLAN.md
 from_claude_to_gemini.md
 from_gemini_to_claude.md
+
+# Screenshot test output (scripts/shots.sh) and local machine settings
+output/
+.env

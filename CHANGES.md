@@ -90,6 +90,21 @@ x64-only). Required widening `LibreHardwareMonitor.Windows.Forms.csproj`'s
 would land in the exact same folder as the x64 one and silently
 overwrite it before either got published.
 
+## Screenshot mode (test tooling)
+
+`--screenshot <folder>` makes the app save its windows and gadget as PNGs
+and exit (see `Utilities/SelfGrab.cs`; driven by `scripts/shots.sh`). New
+fork files: `Utilities/SelfGrab.cs`, `UI/Gadget.SelfGrab.cs`. Hooks in
+upstream files, each marked `GoGoGadget:` (re-apply these after a rebase):
+- `Program.cs` - `Main(string[] args)` instead of `Main()`, and one
+  `SelfGrab.Init(args)` line right after `SetCompatibleTextRenderingDefault`.
+- `UI/Gadget.cs` - `partial` on the class, and one `SelfGrab.Track(this)`
+  line in the constructor.
+
+Main-window changes in general (Goldfield, 2026-10-08) follow the same
+pattern: logic in fork files, only small marked hooks in upstream files,
+each listed here.
+
 ## Not changed, and why
 
 - **NuGet package identity** (`LibreHardwareMonitorLib`) — this fork doesn't

@@ -114,6 +114,13 @@ internal static class StartupGuideDialog
             DebugLog.Write("DialogLayout", $"StartupGuideDialog: guide.Height={guide.Height} okButton.Height={okButton.Height} ClientSize={form.ClientSize}");
         };
 
+        if (Utilities.SelfGrab.Active)
+        {
+            // Screenshot mode (Utilities/SelfGrab.cs): no modal dialogs there.
+            Utilities.SelfGrab.CaptureDialog(form);
+            return showOnStartup;
+        }
+
         form.ShowDialog();
 
         return showOnStartup;

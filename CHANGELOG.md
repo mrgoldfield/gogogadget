@@ -9,7 +9,18 @@ upstream LibreHardwareMonitor this fork started from.
 
 ## [Unreleased]
 
+### Fixed
+- **The Startup Guide now actually shows on startup.** It was skipped
+  whenever "Minimize To Tray" was on, which is the default, so on a fresh
+  install it never appeared. It is now skipped only for a quiet tray start
+  (Start Minimized and Minimize To Tray both on). Found by the new
+  screenshot test.
+
 ### Added
+- **Screenshot mode for testing** (developer tooling): `--screenshot
+  <folder>` saves the open windows and the gadget as PNG files and exits;
+  `scripts/shots.sh` runs a set of scenarios on a Windows machine over ssh
+  and collects the results. See CONTRIBUTING.md, "Tests".
 - **Group Layout: Vertical / Horizontal.** Gadget right-click menu →
   Layout → Group Layout. Vertical is the original look, with hardware
   groups stacked top to bottom. Horizontal puts the groups side by side as

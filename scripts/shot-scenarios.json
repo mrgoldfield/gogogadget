@@ -1,0 +1,9 @@
+{
+  "first-run": {},
+  "full": { "mainForm.showStartupGuide": "false" },
+  "mini": { "mainForm.showStartupGuide": "false", "sensorGadget.miniMode": "true" },
+  "horizontal": { "mainForm.showStartupGuide": "false", "sensorGadget.GroupLayout": "Horizontal" },
+  "row-icons": { "mainForm.showStartupGuide": "false", "sensorGadget.RowIcons": "WithName" },
+  "icons-only": { "mainForm.showStartupGuide": "false", "sensorGadget.RowIcons": "IconsOnly" },
+  "group-spacing": { "mainForm.showStartupGuide": "false", "sensorGadget.GroupSpacingExtra": "12" }
+}

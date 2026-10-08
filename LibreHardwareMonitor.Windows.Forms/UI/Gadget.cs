@@ -10,7 +10,7 @@ using System.Windows.Forms;
 
 namespace LibreHardwareMonitor.Windows.Forms.UI;
 
-public abstract class Gadget : IDisposable
+public abstract partial class Gadget : IDisposable // GoGoGadget: partial for UI/Gadget.SelfGrab.cs
 {
     private readonly GadgetWindow _window;
 
@@ -19,6 +19,7 @@ public abstract class Gadget : IDisposable
     protected Gadget()
     {
         _window = new GadgetWindow();
+        LibreHardwareMonitor.Windows.Forms.Utilities.SelfGrab.Track(this); // GoGoGadget: screenshot mode
         _window.Paint += delegate (object sender, PaintEventArgs e)
         {
             OnPaint(e);

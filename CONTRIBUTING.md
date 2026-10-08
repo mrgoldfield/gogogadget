@@ -66,8 +66,22 @@ persistence, threshold/color resolution, that kind of thing. Run it with:
 dotnet test GoGoGadgetHardwareMonitor.Tests\GoGoGadgetHardwareMonitor.Tests.csproj
 ```
 
-The owner-drawn gadget painting itself isn't realistically unit-testable;
-that's covered by manual QA before a release instead.
+The owner-drawn gadget painting itself isn't realistically unit-testable.
+For a look at it without clicking through the app, use screenshot mode:
+
+```bash
+scripts/shots.sh              # all scenarios in scripts/shot-scenarios.json
+scripts/shots.sh mini         # just one
+```
+
+It sends the working tree to a Windows machine (`WIN_HOST` in `.env`, ssh
+with key auth, .NET 10 SDK installed), builds it, runs each scenario from
+fresh settings with `--screenshot`, and brings the PNGs back to
+`output/shots/` plus a `contact-sheet.png` overview. A scenario is just a
+set of settings keys (`scripts/shot-scenarios.json`), so a new look to check
+is one new line. It works over plain ssh, no desktop needed; it can't show
+title bars, window stacking or right-click menus, so a final look on a
+real screen before a release is still needed.
 
 ## Code style
 
