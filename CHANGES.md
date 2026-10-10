@@ -2,8 +2,17 @@
 
 This fork is based on [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) at commit
 [`82bc3bd`](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/commit/82bc3bdce4bdd819c451a0db832daef9ebfcaca2)
-(2026-09-13, "Support multiple Arctic fan controllers"). Everything not listed
-below is unmodified upstream code.
+(2026-09-13, "Support multiple Arctic fan controllers"), and synced with upstream
+up to [`7615073`](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/commit/7615073)
+(2026-10-09). Everything not listed below is unmodified upstream code.
+
+**How to sync with upstream:** the fork's git history is not related to
+upstream's (it started from a snapshot), so `git merge` refuses. Apply the
+upstream diff since the last sync point instead, on a branch:
+`git fetch upstream && git diff --binary <last sync> upstream/master > up.patch && git apply --3way up.patch`,
+resolve conflicts (keep the fork's side in fork-rewritten code, then port
+upstream's intent by hand), build + test + screenshots, and update the sync
+commit above and the watch list below.
 
 For day-to-day changes as the fork's own features ship, see [CHANGELOG.md](CHANGELOG.md).
 This file tracks the *structural* differences from upstream instead — the
@@ -183,18 +192,15 @@ upstream's version and drop ours plus its CHANGES.md section):
 - Wake-from-sleep reset on the UI thread (`MainForm.PowerModeChanged`).
 - About box `UseShellExecute`.
 
-**Already waiting upstream** (checked 2026-10-10: 15 upstream commits since
-the base `82bc3bd`, two touch the app):
-- #2533 "Report raw sensor value for Data and SmallData in Bytes": the
-  library now reports Data/SmallData sensors in bytes, and upstream's gadget
-  formats them with the new `UnitManager.BytesToString` /
-  `BytesPerSecondToString`. The fork's `SensorGadget` still formats Data as
-  GB and SmallData as MB, so after merging the library change those rows
-  would show huge wrong numbers. Port the formatting, and check gradient
-  thresholds, default selections and the main-window tree for Data/SmallData
-  sensors.
-- #2560 DiskInfoToolkit update; new "Exclude USB devices" option in
-  `MainForm.cs` + `MainForm.Designer.cs` (merges next to the fork's menu items).
+**Already waiting upstream:** nothing (synced to `7615073`, 2026-10-10).
+Check with `git log 7615073..upstream/master -- LibreHardwareMonitor.Windows.Forms`
+(app) and the library commits for anything that changes sensor values or units.
+
+**Synced 2026-10-10 (15 upstream commits, `82bc3bd..7615073`):** only
+`UI/SensorGadget.cs` conflicted (upstream's gadget paint loop vs the fork's
+rewrite: kept the fork's). Ported by hand: #2533 Data sensors now report
+bytes and `SmallData` is gone, so the fork's value formatting uses
+`UnitManager.BytesToString` / `BytesPerSecondToString` like upstream.
 
 ## Not changed, and why
 

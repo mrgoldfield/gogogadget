@@ -9,6 +9,15 @@ upstream LibreHardwareMonitor this fork started from.
 
 ## [Unreleased]
 
+### Changed
+- **Synced with upstream LibreHardwareMonitor** (up to 2026-10-09): NVIDIA GPU
+  reading reworked, with a fix for an access-violation crash when reading NVIDIA
+  sensors; memory (RAM module) temperature sensors; newer disk and RAM
+  libraries; "Exclude USB devices" option for disks; fan-control fixes for
+  several Super I/O chips; more supported boards and AMD Fire Range CPUs.
+- **Data sizes scale their unit** (KB, MB, GB, TB) instead of always GB or MB,
+  following upstream's change to report data sensors in bytes.
+
 ### Fixed
 - **The About box links open again.** Clicking them did nothing in the .NET 10
   build (the browser was never asked to open the address).
