@@ -9,6 +9,8 @@ upstream LibreHardwareMonitor this fork started from.
 
 ## [Unreleased]
 
+## [0.9.7-gogogadget.7] - 2026-10-10 (alpha)
+
 ### Fixed
 - **No more error after waking the PC from sleep.** An "Index was out of
   range" error (caught, the app kept running) could appear on wake, because
