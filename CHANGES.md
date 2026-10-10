@@ -138,6 +138,64 @@ Hooks:
 - `UI/StartupManager.cs` - two marked lines in the constructor (task branch
   and registry branch).
 
+## About box links open again
+
+On .NET 10 (unlike .NET Framework 4.7.2) `ProcessStartInfo.UseShellExecute`
+defaults to `false`, so `Process.Start(url)` threw and the empty `catch`
+hid it: none of the About box links did anything. Upstream has the same
+handler.
+Hooks:
+- `UI/AboutBox.cs` - `LinkLabel_LinkClicked`, one marked line.
+
+## Upstream update watch list
+
+What can break, or needs a manual look, when merging/rebasing a newer
+upstream. Check each item after the merge builds; `grep -rn "GoGoGadget:"`
+lists every marked hook line.
+
+**Marked hook lines in upstream files** (re-apply if a conflict drops them):
+- `Program.cs` - `Main(string[] args)` and `SelfGrab.Init(args)` (screenshot mode).
+- `UI/Gadget.cs` - `partial` on the class, `SelfGrab.Track(this)` in the constructor.
+- `UI/MainForm.cs` - `SettingsFolderMenu.Attach(...)` after `InitializeComponent()`;
+  `PowerModeChanged` reset via `BeginInvoke` (wake fix).
+- `UI/StartupManager.cs` - two `StartupRepoint` lines in the constructor.
+- `UI/AboutBox.cs` - `UseShellExecute = true` in `LinkLabel_LinkClicked`.
+
+**Upstream files the fork changed heavily** (conflicts here need hand work,
+not just re-applying a line):
+- `UI/SensorGadget.cs` - most of the file is fork code (layout, colours,
+  thresholds, Mini/Full, icons, menus). Any upstream change to it has to be
+  ported by hand, especially value formatting (see below).
+- `UI/GadgetWindow.cs` - resize/drag handling (`WM_WINDOWPOSCHANGING/CHANGED`,
+  `WM_GETMINMAXINFO`, `_inProgrammaticResize`).
+- `UI/MainForm.Designer.cs` - window title, Help -> Startup Guide item.
+  Upstream adds menu items here too: merge both item lists.
+- `UI/AboutBox.Designer.cs` / `AboutBox.cs` - fork link label.
+- `UI/StartupManager.cs` - `AppRegistryValueName` instead of `nameof(...)`.
+- `Utilities/Logger.cs` (log file prefix), `Utilities/HttpServer.cs` (auth realm),
+  `UI/SystemTray.cs` (tooltip), `Utilities/PersistentSettings.cs` (`GetAll()`),
+  the `.csproj` (assembly name/product) and `Resources/app.manifest`.
+- Several upstream files only gained the MPL header (first lines). A
+  conflict there is trivial: keep the header.
+
+**Fork fixes upstream may make itself** (if upstream fixes it, keep
+upstream's version and drop ours plus its CHANGES.md section):
+- Wake-from-sleep reset on the UI thread (`MainForm.PowerModeChanged`).
+- About box `UseShellExecute`.
+
+**Already waiting upstream** (checked 2026-10-10: 15 upstream commits since
+the base `82bc3bd`, two touch the app):
+- #2533 "Report raw sensor value for Data and SmallData in Bytes": the
+  library now reports Data/SmallData sensors in bytes, and upstream's gadget
+  formats them with the new `UnitManager.BytesToString` /
+  `BytesPerSecondToString`. The fork's `SensorGadget` still formats Data as
+  GB and SmallData as MB, so after merging the library change those rows
+  would show huge wrong numbers. Port the formatting, and check gradient
+  thresholds, default selections and the main-window tree for Data/SmallData
+  sensors.
+- #2560 DiskInfoToolkit update; new "Exclude USB devices" option in
+  `MainForm.cs` + `MainForm.Designer.cs` (merges next to the fork's menu items).
+
 ## Not changed, and why
 
 - **NuGet package identity** (`LibreHardwareMonitorLib`) — this fork doesn't

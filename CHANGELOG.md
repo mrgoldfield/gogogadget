@@ -9,6 +9,10 @@ upstream LibreHardwareMonitor this fork started from.
 
 ## [Unreleased]
 
+### Fixed
+- **The About box links open again.** Clicking them did nothing in the .NET 10
+  build (the browser was never asked to open the address).
+
 ## [0.9.7-gogogadget.9] - 2026-10-10 (alpha)
 
 ### Added
