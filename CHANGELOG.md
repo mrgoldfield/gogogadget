@@ -9,6 +9,19 @@ upstream LibreHardwareMonitor this fork started from.
 
 ## [Unreleased]
 
+### Changed
+- **Settings now survive updates.** Settings, themes, the default sensor
+  selection and logs moved from the app folder to
+  `%LOCALAPPDATA%\GoGoGadget` (subfolders `UserSettings` and `log`), so a
+  new version unzipped anywhere finds them. On first start, an existing
+  `UserSettings` folder next to the exe is copied over (not moved, so an
+  older version still works).
+
+### Added
+- **File → Open Settings Folder** opens that folder.
+- **Portable mode:** an empty `portable.txt` next to the exe keeps settings
+  and logs next to the exe, as before.
+
 ## [0.9.7-gogogadget.7] - 2026-10-10 (alpha)
 
 ### Fixed

@@ -70,6 +70,7 @@ public sealed partial class MainForm : Form
     public MainForm()
     {
         InitializeComponent();
+        SettingsFolderMenu.Attach(fileMenuItem, saveReportMenuItem); // GoGoGadget: File -> Open Settings Folder (UI/SettingsFolderMenu.cs)
 
         _settings = new PersistentSettings();
         _settings.Load(AppPaths.GetSettingsFileName());

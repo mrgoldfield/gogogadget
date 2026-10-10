@@ -117,6 +117,16 @@ Main-window changes in general (Goldfield, 2026-10-08) follow the same
 pattern: logic in fork files, only small marked hooks in upstream files,
 each listed here.
 
+## Settings and logs in %LOCALAPPDATA%
+
+Upstream writes its `.config` next to the exe. The fork keeps settings in
+`%LOCALAPPDATA%\GoGoGadget\UserSettings` and logs in `...\log`, or next to
+the exe when `portable.txt` is there (`Utilities/AppPaths.cs`, fork file).
+File → Open Settings Folder is added at runtime by `UI/SettingsFolderMenu.cs`.
+Hooks:
+- `UI/MainForm.cs` - one `SettingsFolderMenu.Attach(...)` line after
+  `InitializeComponent()` in the constructor.
+
 ## Not changed, and why
 
 - **NuGet package identity** (`LibreHardwareMonitorLib`) — this fork doesn't

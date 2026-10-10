@@ -68,6 +68,9 @@ foreach ($scenario in $scenarios.PSObject.Properties) {
     $run = Join-Path $runRoot $name
     $null = & robocopy $app $run /MIR /NFL /NDL /NJH /NJS /NP
     if ($LASTEXITCODE -ge 8) { throw "robocopy failed ($LASTEXITCODE)" }
+    # Portable mode: settings and logs stay in this run folder, not in the
+    # shared %LOCALAPPDATA%\GoGoGadget (scenarios run side by side).
+    New-Item -ItemType File -Force -Path (Join-Path $run 'portable.txt') | Out-Null
 
     $settingsDir = Join-Path $run 'UserSettings'
     New-Item -ItemType Directory -Force -Path $settingsDir | Out-Null
