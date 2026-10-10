@@ -16,6 +16,18 @@ The gadget you get from "Add to Full/Mini Gadget" now supports:
 - **Alarm-level coloring** — set a warning/critical threshold per sensor; its bar recolors automatically when crossed. Defaults are suggested from the hardware's own reported safe limits where available.
 - **Themes & profiles you can share** — save your whole visual setup as a `.lhmtheme.json` (portable, works on anyone's hardware) or your whole gadget setup as a `.lhmprofile.json` (for backup / another machine of your own).
 
+### Screenshots
+
+Full gadget, Mini mode, Horizontal group layout, and Row Icons (all at Scale 200%):
+
+![Full gadget](docs/images/gadget-full.png) ![Mini mode](docs/images/gadget-mini.png)
+
+![Horizontal group layout](docs/images/gadget-horizontal.png)
+
+![Row Icons](docs/images/gadget-row-icons.png)
+
+Made with the screenshot test (scenarios starting with readme- in scripts/shot-scenarios.json).
+
 See [CHANGELOG.md](CHANGELOG.md) for the detailed history of how each of these shipped, and [CHANGES.md](CHANGES.md) for the structural differences from upstream.
 
 Everything else — sensor detection, the main window, remote web server, logging, and so on — is unmodified LibreHardwareMonitor.

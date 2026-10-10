@@ -9,6 +9,10 @@ upstream LibreHardwareMonitor this fork started from.
 
 ## [Unreleased]
 
+### Added
+- **README screenshots** of the gadget (Full, Mini, Horizontal, Row Icons), made
+  by the screenshot test (readme- scenarios).
+
 ### Changed
 - **Run On Windows Startup survives updates.** If the startup entry points to an
   older copy whose folder has been deleted, the app now points it at itself on
