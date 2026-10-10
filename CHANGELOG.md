@@ -9,6 +9,12 @@ upstream LibreHardwareMonitor this fork started from.
 
 ## [Unreleased]
 
+### Changed
+- **The debug log no longer grows every second.** Left-over diagnostic lines from
+  the (fixed) gadget-resize investigation wrote 4-5 lines to
+  `GoGoGadgetDebug.log` on every redraw (once a second), tens of MB per day of running. They are gone;
+  failures, user resizes and rare events are still logged.
+
 ## [0.9.7-gogogadget.8] - 2026-10-10 (alpha)
 
 ### Changed

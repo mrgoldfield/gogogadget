@@ -2999,10 +2999,10 @@ public class SensorGadget : Gadget
         int h = Size.Height;
 
         bool needsRecreate = _backgroundDirty || w != _background.Width || h != _background.Height;
-        DebugLog.Write("Resize", $"DrawBackground: w={w} h={h} _background.Width={_background.Width} _background.Height={_background.Height} _backgroundDirty={_backgroundDirty} needsRecreate={needsRecreate}");
 
         if (needsRecreate)
         {
+            DebugLog.Write("Resize", $"DrawBackground: recreating {_background.Width}x{_background.Height} -> {w}x{h} (dirty={_backgroundDirty})");
             _background.Dispose();
             _background = new Bitmap(w, h, PixelFormat.Format32bppPArgb);
 
@@ -3261,20 +3261,6 @@ public class SensorGadget : Gadget
                     PaintGroup(g, hardware, list, w, 0, w, ref y, extraPerStep);
                 }
             }
-
-            // Temporary diagnostic (vertical-drag-to-resize crop
-            // investigation, round 3): the geometry layer (WM_WINDOWPOSCHANGING
-            // -> SnapHeight -> UserResized -> Redraw -> UpdateLayeredWindow)
-            // has been logged as internally consistent across multiple large
-            // drag sessions with no exceptions or Win32 failures, yet the user
-            // still reports a crop. This narrows the remaining unverified
-            // layer down to paint content itself: does the row loop above
-            // ever draw past the bottom of the buffer it's given? Logging the
-            // final content bottom against Size.Height every paint (not just
-            // on mismatch) so a divergence is visible in context, not just as
-            // an isolated warning line.
-            if (HasAnyDisplayedSensor())
-                DebugLog.Write("Resize", $"SensorGadget.OnPaint: content bottom y={y} (+bottomMargin={_bottomMargin}={y + _bottomMargin}) vs Size.Height={Size.Height} extraPerStep={extraPerStep} sensorLineHeight={_sensorLineHeight} hardwareLineHeight={_hardwareLineHeight}");
         }
         catch (ArgumentException ex)
         {
@@ -3283,10 +3269,8 @@ public class SensorGadget : Gadget
             // etc.). Silently skips the rest of this frame's drawing,
             // which - if it fires partway through the row loop - would
             // look exactly like the window being cropped, even though
-            // the window itself is the right size. Temporary diagnostic
-            // (vertical-drag-to-resize investigation): logging this was
-            // previously silent, so there was no way to tell whether it
-            // was ever actually firing.
+            // the window itself is the right size. Logged (rare, cheap) so
+            // such a skipped frame is visible in GoGoGadgetDebug.log.
             DebugLog.Write("Resize", $"OnPaint: caught ArgumentException (frame drawing stopped here) - {ex.Message}\n{ex.StackTrace}");
         }
     }

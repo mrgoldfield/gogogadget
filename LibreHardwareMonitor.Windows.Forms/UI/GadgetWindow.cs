@@ -27,11 +27,9 @@ public sealed class GadgetWindow : NativeWindow, IDisposable
     private Size _bufferSize;
     private Graphics _graphics;
 
-    // Temporary diagnostic (gadget-never-resizes investigation, see
-    // CHANGELOG.md): set around our own UpdateLayeredWindow calls so
-    // WM_WINDOWPOSCHANGING's unconditional entry log can show whether it
-    // is being reentered as a side effect of a call we made ourselves,
-    // as opposed to a genuine external (user-drag/OS) geometry change.
+    // True while the Size setter's own SetWindowPos runs, so the
+    // WM_WINDOWPOSCHANGING/CHANGED handlers can tell a resize we made
+    // ourselves from a real user-drag/OS geometry change and skip it.
     private bool _inProgrammaticResize;
 
     public event EventHandler SizeChanged;
@@ -239,8 +237,6 @@ public sealed class GadgetWindow : NativeWindow, IDisposable
                     // was still too early for exactly this reason.
                     WINDOWPOS wp = (WINDOWPOS)Marshal.PtrToStructure(message.LParam, typeof(WINDOWPOS));
 
-                    DebugLog.Write("Resize", $"WM_WINDOWPOSCHANGING ENTRY: wp=({wp.x},{wp.y},{wp.cx}x{wp.cy}) flags={wp.flags:X} currentSize={_size} currentLocation={_location} inProgrammaticResize={_inProgrammaticResize} lockPositionAndSize={LockPositionAndSize}");
-
                     if (!_inProgrammaticResize)
                     {
                         if (LockPositionAndSize)
@@ -323,7 +319,6 @@ public sealed class GadgetWindow : NativeWindow, IDisposable
                     base.WndProc(ref message);
 
                     WINDOWPOS wp = (WINDOWPOS)Marshal.PtrToStructure(message.LParam, typeof(WINDOWPOS));
-                    DebugLog.Write("Resize", $"WM_WINDOWPOSCHANGED: wp=({wp.x},{wp.y},{wp.cx}x{wp.cy}) flags={wp.flags:X} currentSize={_size} currentLocation={_location} inProgrammaticResize={_inProgrammaticResize}");
 
                     // Skip entirely for a resize GadgetWindow.Size's own
                     // setter drove (SWP_NOSENDCHANGING there only suppresses
@@ -414,10 +409,7 @@ public sealed class GadgetWindow : NativeWindow, IDisposable
     public void Redraw()
     {
         if (!_visible || Paint == null)
-        {
-            DebugLog.Write("Resize", $"Redraw() skipped: visible={_visible} paintHandlerSet={Paint != null}");
             return;
-        }
 
         if (_size != _bufferSize)
         {
@@ -432,8 +424,6 @@ public sealed class GadgetWindow : NativeWindow, IDisposable
         bool ok = NativeMethods.UpdateLayeredWindow(Handle, IntPtr.Zero, IntPtr.Zero, ref _size, _handleBitmapDC, ref pointSource, 0, ref blend, ULW_ALPHA);
         if (!ok)
             DebugLog.Write("Resize", $"Redraw(): UpdateLayeredWindow FAILED for size {_size}, Win32 error={Marshal.GetLastWin32Error()}");
-        NativeMethods.GetWindowRect(Handle, out RECT actualRect);
-        DebugLog.Write("Resize", $"Redraw(): after UpdateLayeredWindow ok={ok}, actual GetWindowRect size={actualRect.Right - actualRect.Left}x{actualRect.Bottom - actualRect.Top} at ({actualRect.Left},{actualRect.Top})");
         // make sure the window is at the right location
         NativeMethods.SetWindowPos(Handle, IntPtr.Zero, _location.X, _location.Y, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOSENDCHANGING);
     }
@@ -544,13 +534,7 @@ public sealed class GadgetWindow : NativeWindow, IDisposable
                 }
                 if (!ok)
                     DebugLog.Write("Resize", $"GadgetWindow.Size setter: SetWindowPos FAILED for size {_size}, Win32 error={Marshal.GetLastWin32Error()}");
-                NativeMethods.GetWindowRect(Handle, out RECT actualRect);
-                DebugLog.Write("Resize", $"GadgetWindow.Size setter: after SetWindowPos ok={ok}, actual GetWindowRect size={actualRect.Right - actualRect.Left}x{actualRect.Bottom - actualRect.Top} at ({actualRect.Left},{actualRect.Top})");
                 SizeChanged?.Invoke(this, EventArgs.Empty);
-            }
-            else
-            {
-                DebugLog.Write("Resize", $"GadgetWindow.Size setter: no-op, already {_size} (requested {value})");
             }
         }
     }
@@ -581,18 +565,6 @@ public sealed class GadgetWindow : NativeWindow, IDisposable
         public byte BlendFlags;
         public byte SourceConstantAlpha;
         public byte AlphaFormat;
-    }
-
-    // Temporary diagnostic (gadget-never-resizes investigation): lets us
-    // compare what the OS actually thinks the window's bounds are
-    // against our own _size field after a call we believe changed them.
-    [StructLayout(LayoutKind.Sequential)]
-    private struct RECT
-    {
-        public int Left;
-        public int Top;
-        public int Right;
-        public int Bottom;
     }
 
     // Round-3 diagnostic/fix (vertical-drag-to-resize "beginning size
@@ -770,10 +742,6 @@ public sealed class GadgetWindow : NativeWindow, IDisposable
 
         [DllImport(USER, CallingConvention = CallingConvention.Winapi)]
         public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
-
-        [DllImport(USER, CallingConvention = CallingConvention.Winapi)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
         [DllImport(USER, CallingConvention = CallingConvention.Winapi)]
         public static extern bool TrackPopupMenuEx(IntPtr hMenu, uint uFlags, int x, int y, IntPtr hWnd, IntPtr tpmParams);
