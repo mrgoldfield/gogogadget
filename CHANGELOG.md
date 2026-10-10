@@ -9,6 +9,8 @@ upstream LibreHardwareMonitor this fork started from.
 
 ## [Unreleased]
 
+## [0.9.7-gogogadget.9] - 2026-10-10 (alpha)
+
 ### Added
 - **README screenshots** of the gadget (Full, Mini, Horizontal, Row Icons), made
   by the screenshot test (readme- scenarios).
