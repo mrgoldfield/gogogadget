@@ -52,6 +52,9 @@ public class StartupManager
                             _startup = true;
                     }
                 }
+
+                if (!_startup && StartupRepoint.PointsToMissingExe(task) && StartupRepoint.TryRepoint(CreateTask, StartupRepoint.ExePaths(task))) // GoGoGadget: old exe gone -> autostart this one (UI/StartupRepoint.cs)
+                    _startup = true;
             }
         }
         else
@@ -64,6 +67,9 @@ public class StartupManager
 
                     if (value != null)
                         _startup = value == Application.ExecutablePath;
+
+                    if (!_startup && StartupRepoint.PointsToMissingExe(value) && StartupRepoint.TryRepoint(CreateRegistryKey, value)) // GoGoGadget: old exe gone -> autostart this one (UI/StartupRepoint.cs)
+                        _startup = true;
                 }
 
                 IsAvailable = true;

@@ -127,6 +127,17 @@ Hooks:
 - `UI/MainForm.cs` - one `SettingsFolderMenu.Attach(...)` line after
   `InitializeComponent()` in the constructor.
 
+## Autostart follows the app to a new folder
+
+`StartupManager` stores the full exe path in its Scheduled Task (or Run
+registry value), and each release is unzipped into a new folder. When the
+stored exe no longer exists, the entry is re-created for the running exe
+(`UI/StartupRepoint.cs`, fork file); an entry pointing to an exe that still
+exists is left alone. Screenshot runs skip it.
+Hooks:
+- `UI/StartupManager.cs` - two marked lines in the constructor (task branch
+  and registry branch).
+
 ## Not changed, and why
 
 - **NuGet package identity** (`LibreHardwareMonitorLib`) — this fork doesn't

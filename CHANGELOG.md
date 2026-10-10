@@ -10,6 +10,10 @@ upstream LibreHardwareMonitor this fork started from.
 ## [Unreleased]
 
 ### Changed
+- **Run On Windows Startup survives updates.** If the startup entry points to an
+  older copy whose folder has been deleted, the app now points it at itself on
+  start, so you don't have to tick the option again. An entry pointing to a copy
+  that still exists is left alone.
 - **The debug log no longer grows every second.** Left-over diagnostic lines from
   the (fixed) gadget-resize investigation wrote 4-5 lines to
   `GoGoGadgetDebug.log` on every redraw (once a second), tens of MB per day of running. They are gone;
