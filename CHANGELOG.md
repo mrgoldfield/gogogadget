@@ -9,6 +9,8 @@ upstream LibreHardwareMonitor this fork started from.
 
 ## [Unreleased]
 
+## [0.9.7-gogogadget.10] - 2026-10-10 (alpha)
+
 ### Changed
 - **Synced with upstream LibreHardwareMonitor** (up to 2026-10-09): NVIDIA GPU
   reading reworked, with a fix for an access-violation crash when reading NVIDIA
