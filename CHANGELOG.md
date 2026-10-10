@@ -9,6 +9,8 @@ upstream LibreHardwareMonitor this fork started from.
 
 ## [Unreleased]
 
+## [0.9.7-gogogadget.8] - 2026-10-10 (alpha)
+
 ### Changed
 - **Settings now survive updates.** Settings, themes, the default sensor
   selection and logs moved from the app folder to
