@@ -26,6 +26,18 @@ Files touched:
 - `LibreHardwareMonitor.Windows.Forms/Utilities/HttpServer.cs` — HTTP Basic Auth realm string
 - `Directory.Build.props` — version scheme (see below)
 
+## Wake-from-sleep reset on the UI thread
+
+Upstream resets all hardware in `MainForm.PowerModeChanged` on Windows'
+system-events thread. The tree view rebuilds its row list on the UI thread
+at the same time and can hit a node that was just removed
+(`ArgumentOutOfRangeException` in `TreeViewAdv.CreateRowMap`, seen after
+waking the PC). The reset is now queued to the UI thread with
+`BeginInvoke`.
+
+Hooks:
+- `LibreHardwareMonitor.Windows.Forms/UI/MainForm.cs` — `PowerModeChanged`, one marked line
+
 ## Autostart / logging collision fix
 
 `StartupManager.cs` used `nameof(LibreHardwareMonitor)` (the namespace) as

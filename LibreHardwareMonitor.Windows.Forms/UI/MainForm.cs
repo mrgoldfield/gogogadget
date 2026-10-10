@@ -651,7 +651,8 @@ public sealed partial class MainForm : Form
     {
         if (eventArgs.Mode == Microsoft.Win32.PowerModes.Resume)
         {
-            _computer.Reset();
+            // GoGoGadget: reset on the UI thread so the sensor tree is never rebuilt mid-reset (crash on wake).
+            if (IsHandleCreated && !IsDisposed) BeginInvoke(new MethodInvoker(_computer.Reset)); else _computer.Reset();
         }
     }
 

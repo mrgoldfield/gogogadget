@@ -10,6 +10,10 @@ upstream LibreHardwareMonitor this fork started from.
 ## [Unreleased]
 
 ### Fixed
+- **No more error after waking the PC from sleep.** An "Index was out of
+  range" error (caught, the app kept running) could appear on wake, because
+  the sensor list was redrawn while all hardware was being reset. The reset
+  now runs on the window's own thread, so the two can no longer overlap.
 - **The Startup Guide now actually shows on startup.** It was skipped
   whenever "Minimize To Tray" was on, which is the default, so on a fresh
   install it never appeared. It is now skipped only for a quiet tray start
