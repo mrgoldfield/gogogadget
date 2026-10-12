@@ -169,6 +169,11 @@ lists every marked hook line.
   `PowerModeChanged` reset via `BeginInvoke` (wake fix).
 - `UI/StartupManager.cs` - two `StartupRepoint` lines in the constructor.
 - `UI/AboutBox.cs` - `UseShellExecute = true` in `LinkLabel_LinkClicked`.
+- `UI/MainForm.cs` - `StorageDiagnostics.Attach()` and `LibreHardwareMonitorLib/Hardware/Storage/StorageDevice.cs` -
+  `DiagnosticLog` + `Update()` wrapper + failure lines in `UpdatePerformanceSensors`:
+  TEMPORARY diagnostic (drive activity stuck at 100 % since the DiskInfoToolkit 2.2.1 sync);
+  remove all of it once the cause is fixed. Same file also has upstream `c3f7935` picked
+  early (first-reading fix); drops out on the next sync.
 
 **Upstream files the fork changed heavily** (conflicts here need hand work,
 not just re-applying a line):

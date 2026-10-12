@@ -9,6 +9,12 @@ upstream LibreHardwareMonitor this fork started from.
 
 ## [Unreleased]
 
+### Fixed
+- Drive Read/Write/Total Activity no longer show a made-up first value (Total
+  Activity started at 100 %, which also stuck as Max); picked from upstream (#2568).
+- Investigating: drive activity stuck at 100 % on some PCs since 0.9.7-gogogadget.10;
+  this build writes a one-time `[Storage]` line per drive to the debug log.
+
 ## [0.9.7-gogogadget.10] - 2026-10-10 (alpha)
 
 ### Changed

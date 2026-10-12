@@ -72,6 +72,7 @@ public sealed partial class MainForm : Form
     {
         InitializeComponent();
         SettingsFolderMenu.Attach(fileMenuItem, saveReportMenuItem); // GoGoGadget: File -> Open Settings Folder (UI/SettingsFolderMenu.cs)
+        Utilities.StorageDiagnostics.Attach(); // GoGoGadget: Temporary diagnostic, drive activity stuck (Utilities/StorageDiagnostics.cs)
 
         _settings = new PersistentSettings();
         _settings.Load(AppPaths.GetSettingsFileName());
