@@ -9,11 +9,17 @@ upstream LibreHardwareMonitor this fork started from.
 
 ## [Unreleased]
 
+### Changed
+- **Synced with upstream LibreHardwareMonitor** (up to 2026-10-12). Upstream's
+  hibernation fix replaces GoGoGadget's own wake-from-sleep fix.
+
 ### Fixed
 - Drive Read/Write/Total Activity no longer show a made-up first value (Total
-  Activity started at 100 %, which also stuck as Max); picked from upstream (#2568).
-- Investigating: drive activity stuck at 100 % on some PCs since 0.9.7-gogogadget.10;
-  this build writes a one-time `[Storage]` line per drive to the debug log.
+  Activity started at 100 %, which also stuck as Max) (upstream #2568).
+- No hang after waking from hibernation (upstream #2452).
+- Gadget no longer crashes on an out-of-range bar value (upstream #2564).
+- Plot window: no crash when clicking a plot with no room to draw, and no error
+  after restoring an infinite axis range (upstream #2563, #2565).
 
 ## [0.9.7-gogogadget.10] - 2026-10-10 (alpha)
 

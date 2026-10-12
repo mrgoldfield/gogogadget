@@ -83,44 +83,7 @@ public sealed class StorageDevice : Hardware, ISmart
         set => StorageDIT.ExcludeUsbDevices = value;
     }
 
-    // GoGoGadget: Temporary diagnostic (drive activity stuck after the first reading since the
-    // DiskInfoToolkit 2.2.1 sync). The app sets this to its debug log; each distinct event is
-    // written once per drive, so the log cannot grow every second. Remove once the cause is fixed.
-    public static Action<string> DiagnosticLog { get; set; }
-
-    private readonly HashSet<string> _diagSeen = new();
-    private int _diagReads;
-
-    private void Diag(string key, string message)
-    {
-        if (DiagnosticLog == null || !_diagSeen.Add(key))
-            return;
-
-        try
-        {
-            DiagnosticLog(Name + " (" + _storage.DevicePath + "): " + message);
-        }
-        catch
-        {
-            // Best-effort only.
-        }
-    }
-
     public override void Update()
-    {
-        // GoGoGadget: Temporary diagnostic, see DiagnosticLog.
-        try
-        {
-            UpdateCore();
-        }
-        catch (Exception ex)
-        {
-            Diag("throw " + ex.GetType().Name, "Update threw: " + ex);
-            throw;
-        }
-    }
-
-    private void UpdateCore()
     {
         bool refreshSmartData = ++_smartUpdateCycle >= Math.Max(SmartUpdateCycleCount, 1);
         if (refreshSmartData)
@@ -446,27 +409,10 @@ public sealed class StorageDevice : Hardware, ISmart
                                               FILE_FLAGS_AND_ATTRIBUTES.FILE_ATTRIBUTE_NORMAL,
                                               null);
 
-        // GoGoGadget: Temporary diagnostic, see DiagnosticLog.
-        if (handle.IsInvalid)
-        {
-            int openError = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
-            Diag("open " + openError, "CreateFile failed on read " + (_diagReads + 1) + ", Win32 error " + openError);
-        }
-
         uint bytesReturned;
         if (!PInvoke.DeviceIoControl((HANDLE)handle.DangerousGetHandle(), PInvoke.IOCTL_DISK_PERFORMANCE, null, 0, &diskPerformance, (uint)sizeof(DISK_PERFORMANCE), &bytesReturned, null))
         {
-            int ioctlError = System.Runtime.InteropServices.Marshal.GetLastWin32Error(); // GoGoGadget: Temporary diagnostic
-            Diag("ioctl " + ioctlError, "IOCTL_DISK_PERFORMANCE failed on read " + (_diagReads + 1) + ", Win32 error " + ioctlError);
             return;
-        }
-
-        // GoGoGadget: Temporary diagnostic, raw counters of the first three good reads.
-        if (++_diagReads <= 3)
-        {
-            Diag("read " + _diagReads, "read " + _diagReads + " ok: Idle=" + diskPerformance.IdleTime + " Query=" + diskPerformance.QueryTime +
-                                       " ReadTime=" + diskPerformance.ReadTime + " WriteTime=" + diskPerformance.WriteTime +
-                                       " BytesRead=" + diskPerformance.BytesRead + " BytesWritten=" + diskPerformance.BytesWritten);
         }
 
         _perfRead.Update(diskPerformance.ReadTime, diskPerformance.QueryTime);

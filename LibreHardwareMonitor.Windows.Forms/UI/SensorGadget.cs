@@ -50,6 +50,7 @@ public class SensorGadget : Gadget
 
     private Image _background = new Bitmap(1, 1);
     private bool _backgroundDirty = true;
+    private readonly Control _owner;
     private readonly float _scale;
 
     // Fork addition (scale multiplier): a coarse user multiplier on top
@@ -347,10 +348,11 @@ public class SensorGadget : Gadget
     private Color _fontColor;
     private Color _backgroundColor;
 
-    public SensorGadget(IComputer computer, PersistentSettings settings, UnitManager unitManager)
+    public SensorGadget(IComputer computer, PersistentSettings settings, UnitManager unitManager, Control owner)
     {
         _unitManager = unitManager;
         _settings = settings;
+        _owner = owner;
         computer.HardwareAdded += HardwareAdded;
         computer.HardwareRemoved += HardwareRemoved;
 
@@ -1263,14 +1265,20 @@ public class SensorGadget : Gadget
 
     private void SensorAdded(ISensor sensor)
     {
-        if (_settings.GetValue(new Identifier(sensor.Identifier, "gadget").ToString(), false))
-            Add(sensor);
+        UiThread.Post(_owner, () => // GoGoGadget: UiThread.Post, no crash before the handle exists
+        {
+            if (_settings.GetValue(new Identifier(sensor.Identifier, "gadget").ToString(), false))
+                Add(sensor);
+        });
     }
 
     private void SensorRemoved(ISensor sensor)
     {
-        if (Contains(sensor))
-            Remove(sensor, false);
+        UiThread.Post(_owner, () => // GoGoGadget: UiThread.Post, no crash before the handle exists
+        {
+            if (Contains(sensor))
+                Remove(sensor, false);
+        });
     }
 
     public bool Contains(ISensor sensor)
@@ -3181,6 +3189,12 @@ public class SensorGadget : Gadget
 
     private void DrawProgress(Graphics g, float x, float y, float width, float height, float progress, Color color)
     {
+        // A NaN, infinite or huge value makes GDI+ throw an OverflowException.
+        if (float.IsNaN(progress) || progress < 0)
+            progress = 0;
+        else if (progress > 1)
+            progress = 1;
+
         Image barBack = GetTintedBarBack(_gradientBarBackground.Value ? color : GetBarTrackColor());
         Image barFore = GetTintedBarFore(color);
         g.DrawImage(barBack,

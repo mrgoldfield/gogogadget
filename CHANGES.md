@@ -3,8 +3,8 @@
 This fork is based on [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) at commit
 [`82bc3bd`](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/commit/82bc3bdce4bdd819c451a0db832daef9ebfcaca2)
 (2026-09-13, "Support multiple Arctic fan controllers"), and synced with upstream
-up to [`7615073`](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/commit/7615073)
-(2026-10-09). Everything not listed below is unmodified upstream code.
+up to [`54f4022`](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/commit/54f4022)
+(2026-10-12). Everything not listed below is unmodified upstream code.
 
 **How to sync with upstream:** the fork's git history is not related to
 upstream's (it started from a snapshot), so `git merge` refuses. Apply the
@@ -34,18 +34,6 @@ Files touched:
 - `LibreHardwareMonitor.Windows.Forms/UI/AboutBox.Designer.cs` — about box title
 - `LibreHardwareMonitor.Windows.Forms/Utilities/HttpServer.cs` — HTTP Basic Auth realm string
 - `Directory.Build.props` — version scheme (see below)
-
-## Wake-from-sleep reset on the UI thread
-
-Upstream resets all hardware in `MainForm.PowerModeChanged` on Windows'
-system-events thread. The tree view rebuilds its row list on the UI thread
-at the same time and can hit a node that was just removed
-(`ArgumentOutOfRangeException` in `TreeViewAdv.CreateRowMap`, seen after
-waking the PC). The reset is now queued to the UI thread with
-`BeginInvoke`.
-
-Hooks:
-- `LibreHardwareMonitor.Windows.Forms/UI/MainForm.cs` — `PowerModeChanged`, one marked line
 
 ## Autostart / logging collision fix
 
@@ -165,15 +153,13 @@ lists every marked hook line.
 **Marked hook lines in upstream files** (re-apply if a conflict drops them):
 - `Program.cs` - `Main(string[] args)` and `SelfGrab.Init(args)` (screenshot mode).
 - `UI/Gadget.cs` - `partial` on the class, `SelfGrab.Track(this)` in the constructor.
-- `UI/MainForm.cs` - `SettingsFolderMenu.Attach(...)` after `InitializeComponent()`;
-  `PowerModeChanged` reset via `BeginInvoke` (wake fix).
+- `UI/MainForm.cs` - `SettingsFolderMenu.Attach(...)` after `InitializeComponent()`.
+- `UI/MainForm.cs` (`HardwareAdded`/`HardwareRemoved`), `UI/SensorGadget.cs`, `UI/SystemTray.cs`,
+  `UI/HardwareNode.cs` (`SensorAdded`/`SensorRemoved`) - `UiThread.Post(...)` instead of upstream's
+  `BeginInvoke` (#2452 crashed on start: BeginInvoke before MainForm's handle exists).
+  If upstream fixes this itself, take theirs and delete `UI/UiThread.cs`.
 - `UI/StartupManager.cs` - two `StartupRepoint` lines in the constructor.
 - `UI/AboutBox.cs` - `UseShellExecute = true` in `LinkLabel_LinkClicked`.
-- `UI/MainForm.cs` - `StorageDiagnostics.Attach()` and `LibreHardwareMonitorLib/Hardware/Storage/StorageDevice.cs` -
-  `DiagnosticLog` + `Update()` wrapper + failure lines in `UpdatePerformanceSensors`:
-  TEMPORARY diagnostic (drive activity stuck at 100 % since the DiskInfoToolkit 2.2.1 sync);
-  remove all of it once the cause is fixed. Same file also has upstream `c3f7935` picked
-  early (first-reading fix); drops out on the next sync.
 
 **Upstream files the fork changed heavily** (conflicts here need hand work,
 not just re-applying a line):
@@ -194,12 +180,18 @@ not just re-applying a line):
 
 **Fork fixes upstream may make itself** (if upstream fixes it, keep
 upstream's version and drop ours plus its CHANGES.md section):
-- Wake-from-sleep reset on the UI thread (`MainForm.PowerModeChanged`).
 - About box `UseShellExecute`.
 
-**Already waiting upstream:** nothing (synced to `7615073`, 2026-10-10).
-Check with `git log 7615073..upstream/master -- LibreHardwareMonitor.Windows.Forms`
+**Already waiting upstream:** nothing (synced to `54f4022`, 2026-10-12).
+Check with `git log 54f4022..upstream/master -- LibreHardwareMonitor.Windows.Forms`
 (app) and the library commits for anything that changes sensor values or units.
+
+**Synced 2026-10-12 (7 upstream commits, `7615073..54f4022`):** `UI/MainForm.cs`
+conflicted: upstream's hibernation fix (#2452: reset after resume on a worker
+thread after 3 s with the timer off, tree/gadget/tray changes marshalled to the UI
+thread) replaces the fork's own wake fix, which was dropped. `UI/SensorGadget.cs`:
+kept the fork's tinted bars, added upstream's progress clamp (#2564) by hand.
+#2568 (drive first reading) was picked a day early in `97e4d0f`.
 
 **Synced 2026-10-10 (15 upstream commits, `82bc3bd..7615073`):** only
 `UI/SensorGadget.cs` conflicted (upstream's gadget paint loop vs the fork's

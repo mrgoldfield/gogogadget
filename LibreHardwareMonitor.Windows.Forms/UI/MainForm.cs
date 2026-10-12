@@ -12,6 +12,8 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Aga.Controls.Tree;
 using Aga.Controls.Tree.NodeControls;
@@ -24,9 +26,13 @@ namespace LibreHardwareMonitor.Windows.Forms.UI;
 
 public sealed partial class MainForm : Form
 {
+    private static readonly TimeSpan ResumeResetDelay = TimeSpan.FromSeconds(3);
+    private static readonly TimeSpan ResetShutdownTimeout = TimeSpan.FromSeconds(5);
+
     private ToolStripMenuItem _autoThemeMenuItem;
     private readonly UserOption _autoStart;
     private readonly Computer _computer;
+    private readonly object _computerResetLock = new();
     private readonly SensorGadget _gadget;
     private readonly Logger _logger;
     private readonly UserRadioGroup _loggingInterval;
@@ -61,6 +67,8 @@ public sealed partial class MainForm : Form
     private int _delayCount;
     private Form _plotForm;
     private UserRadioGroup _plotLocation;
+    private volatile bool _computerClosing;
+    private CancellationTokenSource _resumeResetCancellationTokenSource;
     private UserRadioGroup _splitPanelScalingSetting;
     private bool _selectionDragging;
     private IDictionary<ISensor, Color> _sensorPlotColors = new Dictionary<ISensor, Color>();
@@ -72,7 +80,6 @@ public sealed partial class MainForm : Form
     {
         InitializeComponent();
         SettingsFolderMenu.Attach(fileMenuItem, saveReportMenuItem); // GoGoGadget: File -> Open Settings Folder (UI/SettingsFolderMenu.cs)
-        Utilities.StorageDiagnostics.Attach(); // GoGoGadget: Temporary diagnostic, drive activity stuck (Utilities/StorageDiagnostics.cs)
 
         _settings = new PersistentSettings();
         _settings.Load(AppPaths.GetSettingsFileName());
@@ -137,7 +144,7 @@ public sealed partial class MainForm : Form
 
         _computer = new Computer(_settings);
 
-        _systemTray = new SystemTray(_computer, _settings, _unitManager);
+        _systemTray = new SystemTray(_computer, _settings, _unitManager, this);
         _systemTray.HideShowCommand += HideShowClick;
         _systemTray.ExitCommand += ExitClick;
 
@@ -158,7 +165,7 @@ public sealed partial class MainForm : Form
         {
             // Windows
             treeView.RowHeight = Math.Max(treeView.Font.Height + 1, 18);
-            _gadget = new SensorGadget(_computer, _settings, _unitManager);
+            _gadget = new SensorGadget(_computer, _settings, _unitManager, this);
             _gadget.HideShowCommand += HideShowClick;
         }
 
@@ -344,7 +351,12 @@ public sealed partial class MainForm : Form
         celsiusMenuItem.Checked = _unitManager.TemperatureUnit == TemperatureUnit.Celsius;
         fahrenheitMenuItem.Checked = !celsiusMenuItem.Checked;
 
-        Server = new HttpServer(_root,
+        // The web server can start before Show() and uses Invoke() to read the node tree.
+        // Create the form handle now so early requests can run on the UI thread.
+        _ = Handle;
+
+        Server = new HttpServer(this,
+                                _root,
                                 _computer,
                                 _settings.GetValue("listenerIp", "?"),
                                 _settings.GetValue("listenerPort", 8085),
@@ -615,8 +627,9 @@ public sealed partial class MainForm : Form
         // Make sure the settings are saved when the user logs off
         Microsoft.Win32.SystemEvents.SessionEnded += delegate
         {
-            _computer.Close();
+            CloseComputer();
             SaveConfiguration();
+
             if (_runWebServer.Value)
                 Server.Quit();
         };
@@ -655,10 +668,115 @@ public sealed partial class MainForm : Form
 
     private void PowerModeChanged(object sender, Microsoft.Win32.PowerModeChangedEventArgs eventArgs)
     {
-        if (eventArgs.Mode == Microsoft.Win32.PowerModes.Resume)
+        BeginInvoke(() => HandlePowerModeChanged(eventArgs.Mode));
+    }
+
+    private void HandlePowerModeChanged(Microsoft.Win32.PowerModes mode)
+    {
+        switch (mode)
         {
-            // GoGoGadget: reset on the UI thread so the sensor tree is never rebuilt mid-reset (crash on wake).
-            if (IsHandleCreated && !IsDisposed) BeginInvoke(new MethodInvoker(_computer.Reset)); else _computer.Reset();
+            case Microsoft.Win32.PowerModes.Suspend:
+                CancelPendingResumeReset();
+                timer.Enabled = false;
+                break;
+            case Microsoft.Win32.PowerModes.Resume:
+                ScheduleResumeReset();
+                break;
+        }
+    }
+
+    private void ScheduleResumeReset()
+    {
+        CancelPendingResumeReset();
+        timer.Enabled = false;
+
+        CancellationTokenSource cancellationTokenSource = new();
+
+        lock (_computerResetLock)
+        {
+            if (_computerClosing)
+            {
+                cancellationTokenSource.Dispose();
+                return;
+            }
+
+            _resumeResetCancellationTokenSource = cancellationTokenSource;
+        }
+
+        _ = ResetAfterResumeAsync(cancellationTokenSource);
+    }
+
+    private async Task ResetAfterResumeAsync(CancellationTokenSource cancellationTokenSource)
+    {
+        try
+        {
+            await Task.Delay(ResumeResetDelay, cancellationTokenSource.Token).ConfigureAwait(false);
+
+            await Task.Run(() =>
+            {
+                lock (_computerResetLock)
+                {
+                    if (!_computerClosing && !cancellationTokenSource.IsCancellationRequested)
+                        _computer.Reset();
+                }
+            }, cancellationTokenSource.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        catch (Exception e)
+        {
+            Debug.WriteLine(e);
+        }
+        finally
+        {
+            BeginInvoke(() =>
+            {
+                lock (_computerResetLock)
+                {
+                    cancellationTokenSource.Dispose();
+
+                    if (_resumeResetCancellationTokenSource != cancellationTokenSource || _computerClosing)
+                        return;
+
+                    _resumeResetCancellationTokenSource = null;
+                    timer.Enabled = true;
+                }
+            });
+        }
+    }
+
+    private void CancelPendingResumeReset()
+    {
+        lock (_computerResetLock)
+        {
+            _resumeResetCancellationTokenSource?.Cancel();
+            _resumeResetCancellationTokenSource = null;
+        }
+    }
+
+    private void CloseComputer()
+    {
+        _computerClosing = true;
+
+        // A running reset cannot be cancelled, so do not close its resources on timeout.
+        if (!Monitor.TryEnter(_computerResetLock, ResetShutdownTimeout))
+        {
+            Debug.WriteLine("Skipping computer close because a reset is still running.");
+            return;
+        }
+
+        try
+        {
+            _resumeResetCancellationTokenSource?.Cancel();
+            _resumeResetCancellationTokenSource = null;
+
+            _computer.Close();
+        }
+        finally
+        {
+            Monitor.Exit(_computerResetLock);
         }
     }
 
@@ -886,7 +1004,7 @@ public sealed partial class MainForm : Form
 
     private void SubHardwareAdded(IHardware hardware, Node node)
     {
-        HardwareNode hardwareNode = new(hardware, _settings, _unitManager);
+        HardwareNode hardwareNode = new(hardware, _settings, _unitManager, this);
         hardwareNode.PlotSelectionChanged += PlotSelectionChanged;
         InsertSorted(node.Nodes, hardwareNode);
         foreach (IHardware subHardware in hardware.SubHardware)
@@ -895,26 +1013,32 @@ public sealed partial class MainForm : Form
 
     private void HardwareAdded(IHardware hardware)
     {
-        SubHardwareAdded(hardware, _root);
-        PlotSelectionChanged(this, null);
+        UiThread.Post(this, () => // GoGoGadget: UiThread.Post, no crash before the handle exists
+        {
+            SubHardwareAdded(hardware, _root);
+            PlotSelectionChanged(this, null);
+        });
     }
 
     private void HardwareRemoved(IHardware hardware)
     {
-        List<HardwareNode> nodesToRemove = new();
-        foreach (Node node in _root.Nodes)
+        UiThread.Post(this, () => // GoGoGadget: UiThread.Post, no crash before the handle exists
         {
-            if (node is HardwareNode hardwareNode && hardwareNode.Hardware == hardware)
-                nodesToRemove.Add(hardwareNode);
-        }
+            List<HardwareNode> nodesToRemove = new();
+            foreach (Node node in _root.Nodes)
+            {
+                if (node is HardwareNode hardwareNode && hardwareNode.Hardware == hardware)
+                    nodesToRemove.Add(hardwareNode);
+            }
 
-        foreach (HardwareNode hardwareNode in nodesToRemove)
-        {
-            _root.Nodes.Remove(hardwareNode);
-            hardwareNode.PlotSelectionChanged -= PlotSelectionChanged;
-        }
+            foreach (HardwareNode hardwareNode in nodesToRemove)
+            {
+                _root.Nodes.Remove(hardwareNode);
+                hardwareNode.PlotSelectionChanged -= PlotSelectionChanged;
+            }
 
-        PlotSelectionChanged(this, null);
+            PlotSelectionChanged(this, null);
+        });
     }
 
     private void NodeTextBoxText_DrawText(object sender, DrawEventArgs e)
@@ -1113,9 +1237,12 @@ public sealed partial class MainForm : Form
 
         Visible = false;
         _systemTray.IsMainIconEnabled = false;
+
         timer.Enabled = false;
-        _computer.Close();
+
+        CloseComputer();
         SaveConfiguration();
+
         if (_runWebServer.Value)
             Server.Quit();
 
@@ -1444,7 +1571,13 @@ public sealed partial class MainForm : Form
         // disable the fallback MainIcon during reset, otherwise icon visibility
         // might be lost
         _systemTray.IsMainIconEnabled = false;
-        _computer.Reset();
+
+        lock (_computerResetLock)
+        {
+            if (!_computerClosing)
+                _computer.Reset();
+        }
+
         // restore the MainIcon setting
         _systemTray.IsMainIconEnabled = _minimizeToTray.Value;
     }
