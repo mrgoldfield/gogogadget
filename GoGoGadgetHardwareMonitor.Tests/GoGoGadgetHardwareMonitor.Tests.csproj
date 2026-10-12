@@ -18,4 +18,20 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <!-- Gadget logic tests: the app project is WinForms (net472 / net10.0-windows),
+       so instead of referencing it, compile the WinForms-free logic files straight
+       into this assembly (internal classes stay reachable without InternalsVisibleTo).
+       Only files with no WinForms dependency may be linked here. -->
+  <ItemGroup>
+    <!-- Platform=x64: the library's CsWin32 interop can't generate for AnyCPU (PInvoke005). -->
+    <ProjectReference Include="..\LibreHardwareMonitorLib\LibreHardwareMonitorLib.csproj" AdditionalProperties="Platform=x64" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\LibreHardwareMonitor.Windows.Forms\UI\BarColorResolver.cs" Link="Linked\BarColorResolver.cs" />
+    <Compile Include="..\LibreHardwareMonitor.Windows.Forms\UI\GradientDefaults.cs" Link="Linked\GradientDefaults.cs" />
+    <Compile Include="..\LibreHardwareMonitor.Windows.Forms\UI\SensorGadgetItemSettings.cs" Link="Linked\SensorGadgetItemSettings.cs" />
+    <Compile Include="..\LibreHardwareMonitor.Windows.Forms\Utilities\PersistentSettings.cs" Link="Linked\PersistentSettings.cs" />
+  </ItemGroup>
+
 </Project>
