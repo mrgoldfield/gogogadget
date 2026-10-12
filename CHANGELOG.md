@@ -9,6 +9,8 @@ upstream LibreHardwareMonitor this fork started from.
 
 ## [Unreleased]
 
+## [0.9.7-gogogadget.11] - 2026-10-12 (alpha)
+
 ### Changed
 - **Synced with upstream LibreHardwareMonitor** (up to 2026-10-12). Upstream's
   hibernation fix replaces GoGoGadget's own wake-from-sleep fix.
