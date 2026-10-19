@@ -15,6 +15,10 @@ upstream LibreHardwareMonitor this fork started from.
 - A gadget width you dragged by hand now grows and shrinks with Font Size and
   Scale, instead of jumping back to the automatic width while staying fixed
   from then on.
+- Import Profile now replaces the gadget's sensor setup with the profile's:
+  sensors not in the profile disappear, new ones appear right away (no restart
+  needed any more). A note only shows when some of the profile's sensors don't
+  exist on this PC.
 
 ### Fixed
 - In Mini mode, Move Up/Down and Move Group move one visible row or group per

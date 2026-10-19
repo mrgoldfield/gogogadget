@@ -27,6 +27,8 @@ public class SensorGadget : Gadget
     private const int RightBorder = 7;
 
     private readonly UnitManager _unitManager;
+    // Fable review M5: Profile import walks every sensor to show/hide it live.
+    private readonly IComputer _computer;
     private Image _back = Utilities.EmbeddedResources.GetImage("gadget.png");
     private Image _image;
     private Image _fore;
@@ -354,6 +356,7 @@ public class SensorGadget : Gadget
     {
         _unitManager = unitManager;
         _settings = settings;
+        _computer = computer;
         _owner = owner;
         computer.HardwareAdded += HardwareAdded;
         computer.HardwareRemoved += HardwareRemoved;
@@ -826,12 +829,23 @@ public class SensorGadget : Gadget
 
             if (ThemeProfileManager.TryImportProfile(settings, dialog.FileName, out string error, out string skippedNote))
             {
-                ApplyThemeFromSettings();
+                int wanted = settings.GetAll().Count(pair => pair.Key.EndsWith("/gadget", StringComparison.Ordinal) && pair.Value == "true");
+                int shown = SyncShownSensorsFromSettings();
                 ResortFromSettings();
+                ApplyThemeFromSettings();
+                // Only a note when something needs saying: a clean import
+                // shows its result on the gadget itself.
+                string note = shown < wanted
+                    ? $"{wanted - shown} of the profile's {wanted} sensors don't exist on this PC and were left out " +
+                      "(a profile belongs to the PC it was saved on; use a Theme to share just the look)."
+                    : null;
+                if (skippedNote != null)
+                    note = note == null ? skippedNote : note + "\n\n" + skippedNote;
+                if (note == null)
+                    return;
+
                 MessageBox.Show(
-                    "Profile imported. Colors, gradients, and order took effect immediately - " +
-                    "restart the app if the profile also added or removed sensors from the widget." +
-                    (skippedNote != null ? "\n\n" + skippedNote : string.Empty),
+                    "Profile imported. " + note,
                     "Import Profile",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
@@ -1946,6 +1960,42 @@ public class SensorGadget : Gadget
     // one newly-added item. Per-sensor color/gradient/display-name/mini
     // settings need no equivalent step: SensorGadgetItemSettings already
     // reads those live from _settings on every paint.
+    // Fable review M5: after a Profile import, show exactly the sensors
+    // whose "/gadget" key is now true and hide the rest, live (it used to
+    // need a restart, and could never hide anything). Returns how many
+    // sensors are shown afterwards.
+    private int SyncShownSensorsFromSettings()
+    {
+        List<ISensor> all = new();
+        foreach (IHardware hardware in _computer.Hardware)
+            CollectSensors(hardware, all);
+
+        foreach (ISensor sensor in all)
+        {
+            bool wanted = _settings.GetValue(new Identifier(sensor.Identifier, "gadget").ToString(), false);
+            if (!wanted && Contains(sensor))
+                Remove(sensor, false);
+        }
+
+        foreach (ISensor sensor in all)
+        {
+            bool wanted = _settings.GetValue(new Identifier(sensor.Identifier, "gadget").ToString(), false);
+            if (wanted && !Contains(sensor))
+                Add(sensor);
+        }
+
+        int shown = _sensors.Values.Sum(list => list.Count);
+        DebugLog.Write("ThemeProfile", $"SyncShownSensorsFromSettings: {shown} of {all.Count} sensors shown");
+        return shown;
+    }
+
+    private static void CollectSensors(IHardware hardware, List<ISensor> into)
+    {
+        into.AddRange(hardware.Sensors);
+        foreach (IHardware sub in hardware.SubHardware)
+            CollectSensors(sub, into);
+    }
+
     private void ResortFromSettings()
     {
         foreach (IList<ISensor> list in _sensors.Values)

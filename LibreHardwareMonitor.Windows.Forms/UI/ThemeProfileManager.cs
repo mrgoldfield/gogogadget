@@ -77,11 +77,15 @@ internal static class ThemeProfileManager
     }
 
     // Importing a Profile also applies its embedded Theme keys - a
-    // Profile is "a theme plus sensor-specific settings", not a
-    // replacement for one, per CLAUDE.md.
+    // Profile is "a theme plus sensor-specific settings", per CLAUDE.md.
+    // Its per-sensor part REPLACES the current one (Goldfield, 2026-10-20,
+    // Fable review M5): every existing per-sensor/per-hardware key is
+    // removed first, so sensors the profile doesn't show stop showing.
+    // Only for a real Profile file: a Theme file picked here carries no
+    // sensor keys and must not empty the gadget.
     public static bool TryImportProfile(PersistentSettings settings, string filePath, out string error, out string skippedNote)
     {
-        return TryImport(settings, filePath, key => Array.IndexOf(ThemeKeys, key) >= 0 || IsPerSensorOrHardwareKey(key), out error, out skippedNote);
+        return TryImport(settings, filePath, key => Array.IndexOf(ThemeKeys, key) >= 0 || IsPerSensorOrHardwareKey(key), out error, out skippedNote, replacePerSensorKeys: true);
     }
 
     private static Dictionary<string, string> CollectTheme(PersistentSettings settings)
@@ -97,7 +101,7 @@ internal static class ThemeProfileManager
         return values;
     }
 
-    private static bool TryImport(PersistentSettings settings, string filePath, Func<string, bool> keyFilter, out string error, out string skippedNote)
+    private static bool TryImport(PersistentSettings settings, string filePath, Func<string, bool> keyFilter, out string error, out string skippedNote, bool replacePerSensorKeys = false)
     {
         skippedNote = null;
         DebugLog.Write("ThemeProfile", $"Import starting: {filePath}");
@@ -130,6 +134,21 @@ internal static class ThemeProfileManager
         // Every value is checked against GadgetSettingLimits first (Fable
         // review H2): a bad one (FontSize 0, Opacity 0, "NaN", a non-colour)
         // is skipped and named in skippedNote, never written.
+        if (replacePerSensorKeys && file.Kind == ProfileKind)
+        {
+            List<string> old = new();
+            foreach (string key in settings.GetAll().Keys)
+            {
+                if (IsPerSensorOrHardwareKey(key))
+                    old.Add(key);
+            }
+
+            foreach (string key in old)
+                settings.Remove(key);
+
+            DebugLog.Write("ThemeProfile", $"Profile import: removed {old.Count} existing per-sensor keys before applying");
+        }
+
         int applied = 0;
         List<string> skipped = new();
         foreach (KeyValuePair<string, string> pair in file.Values)
