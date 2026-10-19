@@ -30,6 +30,7 @@
   <ItemGroup>
     <Compile Include="..\LibreHardwareMonitor.Windows.Forms\UI\BarColorResolver.cs" Link="Linked\BarColorResolver.cs" />
     <Compile Include="..\LibreHardwareMonitor.Windows.Forms\UI\GradientDefaults.cs" Link="Linked\GradientDefaults.cs" />
+    <Compile Include="..\LibreHardwareMonitor.Windows.Forms\UI\ThresholdInput.cs" Link="Linked\ThresholdInput.cs" />
     <Compile Include="..\LibreHardwareMonitor.Windows.Forms\UI\SensorGadgetItemSettings.cs" Link="Linked\SensorGadgetItemSettings.cs" />
     <Compile Include="..\LibreHardwareMonitor.Windows.Forms\Utilities\PersistentSettings.cs" Link="Linked\PersistentSettings.cs" />
   </ItemGroup>

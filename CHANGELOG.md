@@ -11,6 +11,8 @@ upstream LibreHardwareMonitor this fork started from.
 
 ### Fixed
 - With Row Icons on, the debug log no longer grows every second.
+- A threshold of "NaN" or "Infinity" (typed in Gradient Threshold or from an
+  imported profile) no longer half-draws the gadget and logs every second.
 
 ## [0.9.7-gogogadget.11] - 2026-10-12 (alpha)
 

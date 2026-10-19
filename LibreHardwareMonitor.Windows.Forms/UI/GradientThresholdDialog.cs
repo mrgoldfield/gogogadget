@@ -69,8 +69,8 @@ internal static class GradientThresholdDialog
 
         okButton.Click += delegate
         {
-            if (!float.TryParse(warnBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out parsedWarn) ||
-                !float.TryParse(critBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out parsedCrit))
+            if (!ThresholdInput.TryParse(warnBox.Text, out parsedWarn) ||
+                !ThresholdInput.TryParse(critBox.Text, out parsedCrit))
             {
                 errorLabel.Text = "Enter numeric values for both fields.";
                 return;

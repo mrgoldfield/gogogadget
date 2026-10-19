@@ -30,6 +30,12 @@ public static class BarColorResolver
     /// </summary>
     public static Color ResolveGradientColor(float value, float warnAt, float critAt)
     {
+        // NaN/Infinity (a hand-edited or imported threshold, or a sensor
+        // glitch) would make t NaN and Color.FromArgb throw on every
+        // paint: treat it as "no gradient" and stay green.
+        if (!IsFinite(value) || !IsFinite(warnAt) || !IsFinite(critAt))
+            return ColorFromHsv(120f, 1f, 1f);
+
         float t;
         if (critAt <= warnAt)
         {
@@ -53,6 +59,9 @@ public static class BarColorResolver
         float hue = 120f * (1f - bucketedT);
         return ColorFromHsv(hue, 1f, 1f);
     }
+
+    // float.IsFinite doesn't exist on this project's net472 target.
+    public static bool IsFinite(float x) => !float.IsNaN(x) && !float.IsInfinity(x);
 
     private static Color ColorFromHsv(float hueDegrees, float saturation, float value)
     {

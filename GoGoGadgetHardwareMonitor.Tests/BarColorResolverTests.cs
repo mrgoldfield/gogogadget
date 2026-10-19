@@ -110,4 +110,16 @@ public class BarColorResolverTests
         Assert.Equal(Red, BarColorResolver.ResolveGradientColor(100f, 0f, 100f));
         Assert.NotEqual(Yellow, BarColorResolver.ResolveGradientColor(10f, 0f, 100f));
     }
+
+    [Theory]
+    [InlineData(float.NaN, 50f, 90f)]
+    [InlineData(70f, float.NaN, 90f)]
+    [InlineData(70f, 50f, float.NaN)]
+    [InlineData(float.PositiveInfinity, 50f, 90f)]
+    [InlineData(70f, float.NegativeInfinity, 90f)]
+    [InlineData(70f, 50f, float.PositiveInfinity)]
+    public void NonFiniteInput_IsGreen_NeverThrows(float value, float warnAt, float critAt)
+    {
+        Assert.Equal(Green, BarColorResolver.ResolveGradientColor(value, warnAt, critAt));
+    }
 }

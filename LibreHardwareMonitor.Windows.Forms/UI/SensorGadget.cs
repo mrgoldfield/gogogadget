@@ -47,6 +47,8 @@ public class SensorGadget : Gadget
     private readonly Dictionary<Color, Image> _barBackTintCache = new Dictionary<Color, Image>();
     private readonly Dictionary<Color, Image> _barForeTintCache = new Dictionary<Color, Image>();
     private readonly Dictionary<Color, SolidBrush> _colorBrushCache = new Dictionary<Color, SolidBrush>();
+    // OnPaint's catch logs each distinct error message once (Fable review M9).
+    private readonly HashSet<string> _loggedPaintErrors = new HashSet<string>();
 
     private Image _background = new Bitmap(1, 1);
     private bool _backgroundDirty = true;
@@ -3279,8 +3281,10 @@ public class SensorGadget : Gadget
             // which - if it fires partway through the row loop - would
             // look exactly like the window being cropped, even though
             // the window itself is the right size. Logged (rare, cheap) so
-            // such a skipped frame is visible in GoGoGadgetDebug.log.
-            DebugLog.Write("Resize", $"OnPaint: caught ArgumentException (frame drawing stopped here) - {ex.Message}\n{ex.StackTrace}");
+            // such a skipped frame is visible in GoGoGadgetDebug.log. Once
+            // per distinct message: a persistent cause repeats every second.
+            if (_loggedPaintErrors.Add(ex.Message))
+                DebugLog.Write("Resize", $"OnPaint: caught ArgumentException (frame drawing stopped here) - {ex.Message}\n{ex.StackTrace}");
         }
     }
 
