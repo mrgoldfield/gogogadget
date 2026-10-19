@@ -9,6 +9,8 @@ upstream LibreHardwareMonitor this fork started from.
 
 ## [Unreleased]
 
+## [0.9.7-gogogadget.12] - 2026-10-19 (alpha)
+
 ### Changed
 - Gradient Threshold accepts your PC's decimal comma (72,5) as well as a dot,
   and shows the current values the same way.
