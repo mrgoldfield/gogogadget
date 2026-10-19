@@ -428,7 +428,7 @@ public class SensorGadget : Gadget
             _scale = b.HorizontalResolution / 96.0f;
         }
 
-        _scaleMultiplier = settings.GetValue("sensorGadget.ScaleMultiplier", 1.0f);
+        _scaleMultiplier = GadgetSettingLimits.ClampScaleMultiplier(settings.GetValue("sensorGadget.ScaleMultiplier", 1.0f));
 
         // Fork fix (Gemini review Finding 3, see from_gemini_to_claude.md):
         // these must be read *before* SetFontSize, not after -
@@ -717,7 +717,7 @@ public class SensorGadget : Gadget
         ToolStripMenuItem alwaysOnTopItem = new ToolStripMenuItem("Always on Top");
         windowMenu.DropDownItems.Add(alwaysOnTopItem);
         windowMenu.DropDownItems.Add(_opacityMenu);
-        Opacity = (byte)settings.GetValue("sensorGadget.Opacity", 255);
+        Opacity = (byte)GadgetSettingLimits.ClampOpacity(settings.GetValue("sensorGadget.Opacity", 255));
 
         for (int i = 0; i < 5; i++)
         {
@@ -763,10 +763,16 @@ public class SensorGadget : Gadget
             if (dialog.ShowDialog() != DialogResult.OK)
                 return;
 
-            if (ThemeProfileManager.TryImportTheme(settings, dialog.FileName, out string error))
+            if (ThemeProfileManager.TryImportTheme(settings, dialog.FileName, out string error, out string skippedNote))
+            {
                 ApplyThemeFromSettings();
+                if (skippedNote != null)
+                    MessageBox.Show("Theme imported. " + skippedNote, "Import Theme", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
             else
+            {
                 MessageBox.Show(error, "Import Theme", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
         };
         themeProfileMenu.DropDownItems.Add(importThemeItem);
         themeProfileMenu.DropDownItems.Add(new ToolStripSeparator());
@@ -796,13 +802,14 @@ public class SensorGadget : Gadget
             if (dialog.ShowDialog() != DialogResult.OK)
                 return;
 
-            if (ThemeProfileManager.TryImportProfile(settings, dialog.FileName, out string error))
+            if (ThemeProfileManager.TryImportProfile(settings, dialog.FileName, out string error, out string skippedNote))
             {
                 ApplyThemeFromSettings();
                 ResortFromSettings();
                 MessageBox.Show(
                     "Profile imported. Colors, gradients, and order took effect immediately - " +
-                    "restart the app if the profile also added or removed sensors from the widget.",
+                    "restart the app if the profile also added or removed sensors from the widget." +
+                    (skippedNote != null ? "\n\n" + skippedNote : string.Empty),
                     "Import Profile",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
@@ -1871,7 +1878,7 @@ public class SensorGadget : Gadget
     private void ApplyThemeFromSettings()
     {
         DebugLog.Write("ThemeProfile", "ApplyThemeFromSettings starting");
-        _scaleMultiplier = _settings.GetValue("sensorGadget.ScaleMultiplier", 1.0f);
+        _scaleMultiplier = GadgetSettingLimits.ClampScaleMultiplier(_settings.GetValue("sensorGadget.ScaleMultiplier", 1.0f));
         SetFontSize(_settings.GetValue("sensorGadget.FontSize", 7.5f));
         SyncCheckedByTag(_fontSizeMenu, _fontSize);
         SyncCheckedByTag(_scaleMenu, _scaleMultiplier);
@@ -1879,7 +1886,7 @@ public class SensorGadget : Gadget
         SetFontColor(_settings.GetValue("sensorGadget.FontColor", Color.White));
         SetBackgroundColor(_settings.GetValue("sensorGadget.BackgroundColor", Color.FromArgb(0)));
 
-        Opacity = (byte)_settings.GetValue("sensorGadget.Opacity", 255);
+        Opacity = (byte)GadgetSettingLimits.ClampOpacity(_settings.GetValue("sensorGadget.Opacity", 255));
         SyncCheckedByTag(_opacityMenu, Opacity);
 
         // HardwareNamesEnabled reads straight from _settings every call
@@ -1947,7 +1954,9 @@ public class SensorGadget : Gadget
 
     private void SetFontSize(float size)
     {
-        _fontSize = size;
+        // Fable review H2: a 0/negative/NaN size (bad config or theme) made
+        // new Font(...) throw here on every start.
+        _fontSize = GadgetSettingLimits.ClampFontSize(size);
 
         // Fork fix: the font itself used to be created at the raw,
         // unscaled _fontSize while every other dimension below already

@@ -71,17 +71,17 @@ internal static class ThemeProfileManager
         Write(filePath, ProfileKind, values);
     }
 
-    public static bool TryImportTheme(PersistentSettings settings, string filePath, out string error)
+    public static bool TryImportTheme(PersistentSettings settings, string filePath, out string error, out string skippedNote)
     {
-        return TryImport(settings, filePath, key => Array.IndexOf(ThemeKeys, key) >= 0, out error);
+        return TryImport(settings, filePath, key => Array.IndexOf(ThemeKeys, key) >= 0, out error, out skippedNote);
     }
 
     // Importing a Profile also applies its embedded Theme keys - a
     // Profile is "a theme plus sensor-specific settings", not a
     // replacement for one, per CLAUDE.md.
-    public static bool TryImportProfile(PersistentSettings settings, string filePath, out string error)
+    public static bool TryImportProfile(PersistentSettings settings, string filePath, out string error, out string skippedNote)
     {
-        return TryImport(settings, filePath, key => Array.IndexOf(ThemeKeys, key) >= 0 || IsPerSensorOrHardwareKey(key), out error);
+        return TryImport(settings, filePath, key => Array.IndexOf(ThemeKeys, key) >= 0 || IsPerSensorOrHardwareKey(key), out error, out skippedNote);
     }
 
     private static Dictionary<string, string> CollectTheme(PersistentSettings settings)
@@ -97,8 +97,9 @@ internal static class ThemeProfileManager
         return values;
     }
 
-    private static bool TryImport(PersistentSettings settings, string filePath, Func<string, bool> keyFilter, out string error)
+    private static bool TryImport(PersistentSettings settings, string filePath, Func<string, bool> keyFilter, out string error, out string skippedNote)
     {
+        skippedNote = null;
         DebugLog.Write("ThemeProfile", $"Import starting: {filePath}");
 
         ThemeProfileFile file;
@@ -125,14 +126,35 @@ internal static class ThemeProfileManager
         // (or vice versa via a renamed extension) - the key filter above
         // just naturally applies fewer or more keys depending on which
         // import was asked for, rather than refusing outright.
+        //
+        // Every value is checked against GadgetSettingLimits first (Fable
+        // review H2): a bad one (FontSize 0, Opacity 0, "NaN", a non-colour)
+        // is skipped and named in skippedNote, never written.
         int applied = 0;
+        List<string> skipped = new();
         foreach (KeyValuePair<string, string> pair in file.Values)
         {
-            if (keyFilter(pair.Key))
+            if (!keyFilter(pair.Key))
+                continue;
+
+            if (!GadgetSettingLimits.IsValidImportValue(pair.Key, pair.Value))
             {
-                settings.SetValue(pair.Key, pair.Value);
-                applied++;
+                skipped.Add(pair.Key);
+                continue;
             }
+
+            settings.SetValue(pair.Key, pair.Value);
+            applied++;
+        }
+
+        if (skipped.Count > 0)
+        {
+            DebugLog.Write("ThemeProfile", $"Import skipped {skipped.Count} invalid value(s): {string.Join(", ", skipped)}");
+            const int shown = 5;
+            string list = string.Join("\n", skipped.Count > shown ? skipped.GetRange(0, shown) : skipped);
+            if (skipped.Count > shown)
+                list += $"\n... and {skipped.Count - shown} more";
+            skippedNote = $"{skipped.Count} setting(s) in the file had a value out of range or unknown and were skipped:\n{list}";
         }
 
         DebugLog.Write("ThemeProfile", $"Import succeeded: {filePath} (kind={file.Kind}, {applied}/{file.Values.Count} keys applied)");
