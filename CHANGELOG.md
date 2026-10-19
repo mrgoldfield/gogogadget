@@ -9,6 +9,10 @@ upstream LibreHardwareMonitor this fork started from.
 
 ## [Unreleased]
 
+### Changed
+- Gradient Threshold accepts your PC's decimal comma (72,5) as well as a dot,
+  and shows the current values the same way.
+
 ### Fixed
 - With Row Icons on, the debug log no longer grows every second.
 - A threshold of "NaN" or "Infinity" (typed in Gradient Threshold or from an

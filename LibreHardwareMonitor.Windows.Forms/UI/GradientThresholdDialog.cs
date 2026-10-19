@@ -5,7 +5,6 @@
 // All Rights Reserved.
 
 using System.Drawing;
-using System.Globalization;
 using System.Windows.Forms;
 using LibreHardwareMonitor.Windows.Forms.UI.Themes;
 using LibreHardwareMonitor.Windows.Forms.Utilities;
@@ -55,9 +54,9 @@ internal static class GradientThresholdDialog
                    "above max it is solid red."
         };
         Label warnLabel = new Label { AutoSize = true, Text = "Threshold (start of shift):" };
-        TextBox warnBox = new TextBox { Width = 140, Text = currentWarnAt?.ToString(CultureInfo.InvariantCulture) ?? string.Empty };
+        TextBox warnBox = new TextBox { Width = 140, Text = ThresholdInput.Format(currentWarnAt) };
         Label critLabel = new Label { AutoSize = true, Text = "Max (full red):" };
-        TextBox critBox = new TextBox { Width = 140, Text = currentCritAt?.ToString(CultureInfo.InvariantCulture) ?? string.Empty };
+        TextBox critBox = new TextBox { Width = 140, Text = ThresholdInput.Format(currentCritAt) };
         Label errorLabel = new Label { AutoSize = false, Size = new Size(316, 18), ForeColor = Color.Firebrick, Text = string.Empty };
         Button clearButton = new Button { Text = "Clear", AutoSize = true, DialogResult = DialogResult.Ignore };
         Button okButton = new Button { Text = "OK", AutoSize = true };
