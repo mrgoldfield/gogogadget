@@ -1477,12 +1477,9 @@ public class SensorGadget : Gadget
         if (list == null)
             return;
 
-        int index = list.IndexOf(sensor);
-        int newIndex = index + direction;
-        if (newIndex < 0 || newIndex >= list.Count)
+        // Fable review M1: move past rows hidden in Mini mode.
+        if (!GadgetOrdering.Move(list, sensor, direction, IsSensorDisplayed))
             return;
-
-        (list[newIndex], list[index]) = (list[index], list[newIndex]);
 
         for (int i = 0; i < list.Count; i++)
             _settings.SetValue(OrderKey(list[i]), i);
@@ -1520,12 +1517,11 @@ public class SensorGadget : Gadget
 
         if (_contextMenuHardware != null)
         {
-            int hwIndex = _hardwareOrder.IndexOf(_contextMenuHardware);
             bool horizontal = _groupLayout == GroupLayoutMode.Horizontal;
             _moveGroupUpItem.Text = "Move \"" + _contextMenuHardware.Name + "\" " + (horizontal ? "Left" : "Up");
             _moveGroupDownItem.Text = "Move \"" + _contextMenuHardware.Name + "\" " + (horizontal ? "Right" : "Down");
-            _moveGroupUpItem.Enabled = hwIndex > 0;
-            _moveGroupDownItem.Enabled = hwIndex >= 0 && hwIndex < _hardwareOrder.Count - 1;
+            _moveGroupUpItem.Enabled = GadgetOrdering.CanMove(_hardwareOrder, _contextMenuHardware, -1, IsGroupDisplayed);
+            _moveGroupDownItem.Enabled = GadgetOrdering.CanMove(_hardwareOrder, _contextMenuHardware, 1, IsGroupDisplayed);
 
             ContextMenuStrip.Items.Insert(0, _sensorMenuSeparator);
             ContextMenuStrip.Items.Insert(0, _moveGroupDownItem);
@@ -1543,11 +1539,10 @@ public class SensorGadget : Gadget
         if (list == null)
             return;
 
-        int index = list.IndexOf(_contextMenuSensor);
         _moveUpItem.Text = "Move \"" + _contextMenuSensor.Name + "\" Up";
         _moveDownItem.Text = "Move \"" + _contextMenuSensor.Name + "\" Down";
-        _moveUpItem.Enabled = index > 0;
-        _moveDownItem.Enabled = index < list.Count - 1;
+        _moveUpItem.Enabled = GadgetOrdering.CanMove(list, _contextMenuSensor, -1, IsSensorDisplayed);
+        _moveDownItem.Enabled = GadgetOrdering.CanMove(list, _contextMenuSensor, 1, IsSensorDisplayed);
 
         bool hasOverride = SensorGadgetItemSettings.TryGetBarColor(_settings, _contextMenuSensor, out _);
         _barColorAutoItem.Enabled = hasOverride;
@@ -1651,15 +1646,9 @@ public class SensorGadget : Gadget
     // individual sensors from different hardware.
     private void MoveHardwareGroup(IHardware hardware, int direction)
     {
-        int index = _hardwareOrder.IndexOf(hardware);
-        if (index < 0)
+        // Fable review M1: move past groups with nothing shown in this mode.
+        if (!GadgetOrdering.Move(_hardwareOrder, hardware, direction, IsGroupDisplayed))
             return;
-
-        int newIndex = index + direction;
-        if (newIndex < 0 || newIndex >= _hardwareOrder.Count)
-            return;
-
-        (_hardwareOrder[newIndex], _hardwareOrder[index]) = (_hardwareOrder[index], _hardwareOrder[newIndex]);
 
         for (int i = 0; i < _hardwareOrder.Count; i++)
             _settings.SetValue(HardwareOrderKey(_hardwareOrder[i]), i);
@@ -2750,6 +2739,13 @@ public class SensorGadget : Gadget
 
         return list.Where(s => SensorGadgetItemSettings.IsMini(_settings, s)).ToList();
     }
+
+    // Fable review M1: what Move Up/Down count as a neighbour.
+    private bool IsSensorDisplayed(ISensor sensor) =>
+        !_miniMode.Value || SensorGadgetItemSettings.IsMini(_settings, sensor);
+
+    private bool IsGroupDisplayed(IHardware hardware) =>
+        GetDisplayedSensors(hardware).Count > 0;
 
     private bool HasAnyDisplayedSensor()
     {

@@ -17,6 +17,8 @@ upstream LibreHardwareMonitor this fork started from.
   from then on.
 
 ### Fixed
+- In Mini mode, Move Up/Down and Move Group move one visible row or group per
+  click (they used to swap with rows hidden in Mini, so nothing seemed to happen).
 - With Row Icons on, the debug log no longer grows every second.
 - A threshold of "NaN" or "Infinity" (typed in Gradient Threshold or from an
   imported profile) no longer half-draws the gadget and logs every second.
