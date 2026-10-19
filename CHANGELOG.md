@@ -9,6 +9,9 @@ upstream LibreHardwareMonitor this fork started from.
 
 ## [Unreleased]
 
+### Fixed
+- With Row Icons on, the debug log no longer grows every second.
+
 ## [0.9.7-gogogadget.11] - 2026-10-12 (alpha)
 
 ### Changed

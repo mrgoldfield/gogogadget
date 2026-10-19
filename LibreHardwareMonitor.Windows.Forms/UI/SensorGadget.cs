@@ -2925,7 +2925,6 @@ public class SensorGadget : Gadget
         // (see OnPaint), so the same offset applies from that anchor.
         int textVisualCenter = (y - 1) + (int)Math.Round(_textInkCenterOffset);
         int iconY = textVisualCenter - size / 2;
-        DebugLog.Write("RowIcons", $"ComputeRowIconLayout: y={y} textInkHeight={_textInkHeight} textInkCenterOffset={_textInkCenterOffset} size={size} -> textVisualCenter={textVisualCenter} iconY={iconY}");
         return (size, iconY);
     }
 
