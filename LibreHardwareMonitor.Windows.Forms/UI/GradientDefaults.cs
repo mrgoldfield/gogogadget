@@ -11,9 +11,10 @@ namespace LibreHardwareMonitor.Windows.Forms.UI;
 // Fork addition (Phase 3): suggested starting values for
 // GradientThresholdDialog when a sensor has no thresholds configured
 // yet, so setting up gradient coloring on a common sensor type doesn't
-// start from a blank form. Purely a dialog pre-fill - never applied
-// until the user opens the dialog and clicks OK, so it doesn't change
-// how any sensor renders on its own.
+// start from a blank form. Also the built-in gradient itself: every
+// sensor of these types colours green -> red on these values by default
+// (SensorGadgetItemSettings.TryGetGradientThresholds) until the user sets
+// its own thresholds or turns the gradient off for it.
 internal static class GradientDefaults
 {
     public static bool TryGetDefault(SensorType type, out float warnAt, out float critAt)

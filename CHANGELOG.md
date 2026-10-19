@@ -16,6 +16,11 @@ upstream LibreHardwareMonitor this fork started from.
 - Importing a theme or profile with a broken value (for example Font Size or
   Scale 0, Opacity 0) no longer crashes the app on every start: bad values are
   skipped and listed, and the gadget keeps any setting within safe limits.
+- Exporting a theme or profile to a folder you can't write to shows the reason
+  instead of the crash dialog.
+- Empty gadget hint names the right menu item ("Add to Full Gadget").
+- A defaults file with `"Rules": null` no longer breaks first-run setup.
+- Small font leaks when changing Scale or importing a theme.
 
 ## [0.9.7-gogogadget.11] - 2026-10-12 (alpha)
 

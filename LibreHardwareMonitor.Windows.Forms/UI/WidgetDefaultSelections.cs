@@ -242,7 +242,8 @@ internal static class WidgetDefaultSelections
 
             string json = File.ReadAllText(path);
             WidgetDefaultsFile parsed = JsonSerializer.Deserialize<WidgetDefaultsFile>(json, JsonOptions);
-            return parsed ?? FactoryDefaults;
+            // "Rules": null in a hand-edited file would crash first-run setup.
+            return parsed?.Rules == null ? FactoryDefaults : parsed;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
         {

@@ -24,6 +24,8 @@ internal static class StartupGuideDialog
     // DisplayNameDialog, GroupSpacingDialog).
     public static bool Show(bool initiallyShowOnStartup)
     {
+        // Declared before the form so it is disposed after it.
+        using Font headingFont = new Font(SystemFonts.MessageBoxFont, FontStyle.Bold);
         using Form form = new Form
         {
             Text = "Welcome to GoGoGadget Hardware Monitor",
@@ -38,7 +40,7 @@ internal static class StartupGuideDialog
         Label heading = new Label
         {
             AutoSize = true,
-            Font = new Font(SystemFonts.MessageBoxFont, FontStyle.Bold),
+            Font = headingFont,
             Text = "GoGoGadget Hardware Monitor"
         };
         Label subheading = new Label

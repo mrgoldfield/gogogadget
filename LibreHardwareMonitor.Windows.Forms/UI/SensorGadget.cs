@@ -747,8 +747,19 @@ public class SensorGadget : Gadget
                 FileName = "gadget.lhmtheme.json",
                 InitialDirectory = AppPaths.UserSettingsDirectory
             };
-            if (dialog.ShowDialog() == DialogResult.OK)
+            if (dialog.ShowDialog() != DialogResult.OK)
+                return;
+
+            // Fable review M6: a read-only or locked target used to end in
+            // the crash dialog; show the reason like Import does.
+            try
+            {
                 ThemeProfileManager.ExportTheme(settings, dialog.FileName);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+            {
+                MessageBox.Show("Couldn't save the theme: " + ex.Message, "Export Theme", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
         };
         themeProfileMenu.DropDownItems.Add(exportThemeItem);
 
@@ -786,8 +797,19 @@ public class SensorGadget : Gadget
                 FileName = "gadget.lhmprofile.json",
                 InitialDirectory = AppPaths.UserSettingsDirectory
             };
-            if (dialog.ShowDialog() == DialogResult.OK)
+            if (dialog.ShowDialog() != DialogResult.OK)
+                return;
+
+            // Fable review M6: a read-only or locked target used to end in
+            // the crash dialog; show the reason like Import does.
+            try
+            {
                 ThemeProfileManager.ExportProfile(settings, dialog.FileName);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+            {
+                MessageBox.Show("Couldn't save the profile: " + ex.Message, "Export Profile", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
         };
         themeProfileMenu.DropDownItems.Add(exportProfileItem);
 
@@ -1967,6 +1989,10 @@ public class SensorGadget : Gadget
         // the user is trying to read.
         double scaledFontSize = _fontSize * _scale * _scaleMultiplier;
         _scaledFontSize = scaledFontSize;
+        // Dispose the previous fonts (Scale menu and every theme/profile
+        // import call this again); null on the constructor's first call.
+        _largeFont?.Dispose();
+        _smallFont?.Dispose();
         _largeFont = CreateFont((float)scaledFontSize, FontStyle.Bold);
         _smallFont = CreateFont((float)scaledFontSize, FontStyle.Regular);
         MeasureTextInk();
@@ -3245,7 +3271,7 @@ public class SensorGadget : Gadget
                                  ? "No sensors in Mini yet. Double-click to switch to Full, or right-click " +
                                    "a sensor in the main window and choose \"Add to Mini Gadget\"."
                                  : "Right-click on a sensor in the main window and select " +
-                                   "\"Show in Gadget\" to show the sensor here.",
+                                   "\"Add to Full Gadget\" to show the sensor here.",
                              _smallFont, _textBrush,
                              new Rectangle(x, y - 1, w - RightBorder - x, 0));
             }
