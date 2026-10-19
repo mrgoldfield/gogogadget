@@ -1979,6 +1979,7 @@ public class SensorGadget : Gadget
         // Fable review H2: a 0/negative/NaN size (bad config or theme) made
         // new Font(...) throw here on every start.
         _fontSize = GadgetSettingLimits.ClampFontSize(size);
+        double previousScaledFontSize = _scaledFontSize;
 
         // Fork fix: the font itself used to be created at the raw,
         // unscaled _fontSize while every other dimension below already
@@ -2011,7 +2012,26 @@ public class SensorGadget : Gadget
         _bottomMargin = BottomBorder + (int)Math.Round(0.3 * scaledFontSize);
         _progressWidth = (int)Math.Round(5.3 * scaledFontSize);
 
-        Resize(ComputeDefaultWidth(scaledFontSize));
+        // Fable review M4 (Goldfield, 2026-10-20: "scale the dragged width
+        // with the font"): a width the user dragged grows/shrinks in step
+        // with Font Size/Scale instead of being replaced by the auto-fit
+        // width while still flagged as manual. previousScaledFontSize is 0
+        // on the constructor's first call, which applies the persisted
+        // width itself right after.
+        if (_widthManuallySet && previousScaledFontSize > 0 && previousScaledFontSize != scaledFontSize)
+        {
+            int scaledWidth = (int)Math.Round(Size.Width * scaledFontSize / previousScaledFontSize);
+            DebugLog.Write("Resize", $"SetFontSize: manual width {Size.Width} -> {scaledWidth} (font {previousScaledFontSize:F2} -> {scaledFontSize:F2})");
+            Resize(scaledWidth);
+        }
+        else if (_widthManuallySet && previousScaledFontSize > 0)
+        {
+            Resize(Size.Width);
+        }
+        else
+        {
+            Resize(ComputeDefaultWidth(scaledFontSize));
+        }
     }
 
     // Fork fix: upstream's 17.3x-of-font-size ratio only ever needed to

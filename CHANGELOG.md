@@ -12,6 +12,9 @@ upstream LibreHardwareMonitor this fork started from.
 ### Changed
 - Gradient Threshold accepts your PC's decimal comma (72,5) as well as a dot,
   and shows the current values the same way.
+- A gadget width you dragged by hand now grows and shrinks with Font Size and
+  Scale, instead of jumping back to the automatic width while staying fixed
+  from then on.
 
 ### Fixed
 - With Row Icons on, the debug log no longer grows every second.
