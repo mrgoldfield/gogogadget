@@ -9,6 +9,8 @@ upstream LibreHardwareMonitor this fork started from.
 
 ## [Unreleased]
 
+## [0.9.7-gogogadget.13] - 2026-11-12 (alpha)
+
 ### Changed
 - Synced with upstream LibreHardwareMonitor (2026-11-12): support for more
   motherboards and fan controllers, Zen 5 server CPU temperatures, RTX PRO
