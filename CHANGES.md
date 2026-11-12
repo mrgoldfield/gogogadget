@@ -3,8 +3,8 @@
 This fork is based on [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) at commit
 [`82bc3bd`](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/commit/82bc3bdce4bdd819c451a0db832daef9ebfcaca2)
 (2026-09-13, "Support multiple Arctic fan controllers"), and synced with upstream
-up to [`54f4022`](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/commit/54f4022)
-(2026-10-12). Everything not listed below is unmodified upstream code.
+up to [`9e2d677`](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor/commit/9e2d677)
+(2026-11-12). Everything not listed below is unmodified upstream code.
 
 **How to sync with upstream:** the fork's git history is not related to
 upstream's (it started from a snapshot), so `git merge` refuses. Apply the
@@ -135,14 +135,26 @@ Hooks:
 - `UI/StartupManager.cs` - two marked lines in the constructor (task branch
   and registry branch).
 
-## About box links open again
+## Hibernation fix kept after upstream reverted it
 
-On .NET 10 (unlike .NET Framework 4.7.2) `ProcessStartInfo.UseShellExecute`
-defaults to `false`, so `Process.Start(url)` threw and the empty `catch`
-hid it: none of the About box links did anything. Upstream has the same
-handler.
-Hooks:
-- `UI/AboutBox.cs` - `LinkLabel_LinkClicked`, one marked line.
+Upstream reverted its hibernation fix #2452 (#2572, plain synchronous
+`_computer.Reset()` on the SystemEvents thread again). The fork keeps #2452's
+path: reset after resume on a worker thread with the timer off, tree/gadget/tray
+changes marshalled through `UiThread.Post`, and the web server reading the node
+tree on the UI thread (`HttpServer` takes the owner `Control`). Taking the revert
+brings the wake crash (`TreeViewAdv.CreateRowMap` index out of range) back.
+Files: `UI/MainForm.cs`, `UI/HardwareNode.cs`, `UI/SensorGadget.cs`,
+`UI/SystemTray.cs`, `Utilities/HttpServer.cs`: at every sync keep the fork's side
+of these hunks and apply only upstream's other commits to them.
+
+## Library targets .NET 10 only
+
+Upstream added `net11.0` to `LibreHardwareMonitorLib`'s `TargetFrameworks` (#2630).
+The fork builds with the .NET 10 SDK (nehemiah, win11, CI), which can't target
+net11.0, so the fork drops it (marked comment in the csproj). Upstream's CI and
+Avalonia UI projects (#2602) are not taken either: the fork has its own workflows
+and only ships the WinForms app. Sync with
+`-- . ':!LibreHardwareMonitor.Avalonia' ':!.github'`.
 
 ## Upstream update watch list
 
@@ -159,7 +171,6 @@ lists every marked hook line.
   `BeginInvoke` (#2452 crashed on start: BeginInvoke before MainForm's handle exists).
   If upstream fixes this itself, take theirs and delete `UI/UiThread.cs`.
 - `UI/StartupManager.cs` - two `StartupRepoint` lines in the constructor.
-- `UI/AboutBox.cs` - `UseShellExecute = true` in `LinkLabel_LinkClicked`.
 
 **Upstream files the fork changed heavily** (conflicts here need hand work,
 not just re-applying a line):
@@ -180,11 +191,20 @@ not just re-applying a line):
 
 **Fork fixes upstream may make itself** (if upstream fixes it, keep
 upstream's version and drop ours plus its CHANGES.md section):
-- About box `UseShellExecute`.
+- Nothing right now (the About box fix came from upstream as #2578).
 
-**Already waiting upstream:** nothing (synced to `54f4022`, 2026-10-12).
-Check with `git log 54f4022..upstream/master -- LibreHardwareMonitor.Windows.Forms`
+**Already waiting upstream:** nothing (synced to `9e2d677`, 2026-11-12).
+Check with `git log 9e2d677..upstream/master -- LibreHardwareMonitor.Windows.Forms`
 (app) and the library commits for anything that changes sensor values or units.
+
+**Synced 2026-11-12 (26 upstream commits, `54f4022..9e2d677`):** library: new
+boards (ASUS EC Crosshair X870E Apex, ROG Maximus XI Hero, GA-EX58-UD5, X870 T Sensor),
+Fintek F71889ED fan control, Zen 5 Turin CCD temps, AMD average core clock fix, RTX PRO
+Blackwell memory junction temp, AquaComputer exception handling, package bumps
+(System.* 11.0.0, DiskInfoToolkit 2.2.2, RAMSPDToolkit 1.6.4). App: web server can
+listen on localhost (#2579), refuses cross-site fan changes (GHSA-9r76-vvq4-53hc),
+About links fix (#2578, replaces the fork's own). Not taken: the #2452 revert (see
+"Hibernation fix kept"), `net11.0`, Avalonia UI, upstream CI changes.
 
 **Synced 2026-10-12 (7 upstream commits, `7615073..54f4022`):** `UI/MainForm.cs`
 conflicted: upstream's hibernation fix (#2452: reset after resume on a worker

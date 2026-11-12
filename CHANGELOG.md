@@ -9,6 +9,13 @@ upstream LibreHardwareMonitor this fork started from.
 
 ## [Unreleased]
 
+### Changed
+- Synced with upstream LibreHardwareMonitor (2026-11-12): support for more
+  motherboards and fan controllers, Zen 5 server CPU temperatures, RTX PRO
+  Blackwell memory temperature, and a security fix: the web server no longer
+  accepts fan changes sent by other websites. The web server can now also
+  listen on localhost only.
+
 ## [0.9.7-gogogadget.12] - 2026-10-19 (alpha)
 
 ### Changed

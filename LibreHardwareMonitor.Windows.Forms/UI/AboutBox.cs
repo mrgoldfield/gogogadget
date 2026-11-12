@@ -36,7 +36,10 @@ public sealed partial class AboutBox : Form
     {
         try
         {
-            Process.Start(new ProcessStartInfo(e.Link.LinkData.ToString()) { UseShellExecute = true }); // GoGoGadget: .NET 10 defaults this to false, so the link silently did nothing
+            Process.Start(new ProcessStartInfo(e.Link.LinkData.ToString())
+            {
+                UseShellExecute = true
+            });
         }
         catch { }
     }
